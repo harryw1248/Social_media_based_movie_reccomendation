@@ -11,8 +11,6 @@ import pickle
 import string
 
 index_to_movies = dict()
-index_to_movies[1] = "The Avengers"
-index_to_movies[2] = "Venom"
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList():
@@ -44,7 +42,7 @@ doc_term_weightings = dict()
 # Computes the document vector weights using weighting scheme #1: TF-IDF
 def computeDocWeightsTFIDF(inverted_index, num_files):
     # Intializes global variable holding document term weightings to SimilarityData() objects
-    for movieID in range(1, num_files + 1):
+    for movieID in range(0, num_files + 1):
         doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
 
     index = 0
@@ -213,7 +211,7 @@ if __name__ == '__main__':
     doc_folder = "movies/"
     doc_weighting_scheme = "tfidf"
     queries = "queries.txt"
-    current_index = 2
+    current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
