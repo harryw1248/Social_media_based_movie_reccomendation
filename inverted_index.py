@@ -212,18 +212,30 @@ if __name__ == '__main__':
     num_files = 0
     doc_folder = "movies/"
     doc_weighting_scheme = "tfidf"
+    queries = "queries.txt"
+    current_index = 2
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
-        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')     # Open the file
+        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
+        if "movie" in filename:
+            continue
 
         if filename == ".DS_Store":
             continue
 
-        line = file.read()                                              # Read the file
-        movieID = int(''.join(ch for ch in filename if ch.isdigit()))
+        index1 = 7
+        index2 = filename.find(".")
+        new_string = filename[index1:index2]
+        print(new_string)
+        index_to_movies[current_index] = new_string
+        new_file = open(os.getcwd() + "/" + doc_folder + "movie" + str(current_index) + ".txt", 'w')
+        line = file.read()
+        movieID = current_index
+        new_file.write(line)
         indexDocument(line, doc_weighting_scheme, inverted_index, movieID)    # Update the inverted index
         file.close()
         num_files += 1
+        current_index = current_index + 1
 
     # Once inverted index is complete, compute document weights using the appropriate weighting scheme
     if doc_weighting_scheme == "tfidf":
@@ -231,37 +243,21 @@ if __name__ == '__main__':
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
 
-    print(inverted_index)
-    pickle_out = open("harry_is_dumb.pickle", "wb")
-    pickle.dump(inverted_index, pickle_out)
-    pickle_out.close()
-    pickle_in = open("harry_is_dumb.pickle", "rb")
-    example = pickle.load(pickle_in)
-    print(example)
-    print(example["face"].posting_list[0].movieID)
+    pickle_out1 = open("inverted_index.pickle", "wb")
+    pickle.dump(inverted_index, pickle_out1)
+    pickle_out1.close()
+    pickle_out2 = open("doc_term_weightings.pickle", "wb")
+    pickle.dump(inverted_index, pickle_out2)
+    pickle_out2.close()
 
-    '''
-    # Dictionary to store relevance judgments for each queries from cranfield.reljudge
-    relevance_judgments = dict()
-    reljudge = open('cranfield.reljudge', 'r')
-    input_string = reljudge.readline()
+    pickle_in = open("inverted_index.pickle", "rb")
+    inverted_index = pickle.load(pickle_in)
+    pickle_in = open("doc_term_weightings.pickle", "rb")
+    doc_term_weightings = pickle.load(pickle_in)
+    query_weighting_scheme = "tfidf"
 
-    # Create mapping of each query number to relevant documents
-    while input_string:
-        tokens = re.split("\s", input_string)
-        query_num = int(tokens[0])
-        movieID = int(tokens[1])
-
-        if query_num not in relevance_judgments:
-            relevance_judgments[query_num] = list()
-        relevance_judgments[query_num].append(movieID)
-        input_string = reljudge.readline()
-
-    reljudge.close()
-
-    out_file = open('cranfield.' + doc_weighting_scheme + '.' + query_weighting_scheme + '.' + 'output', 'w+')
     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
-
+    out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
     line = query_doc.readline()
     query_num = 1
 
@@ -276,16 +272,16 @@ if __name__ == '__main__':
     recall_total_before_macro_average_500 = 0.0
     num_retrieved = [10, 50, 100, 500]  # Different document ranking quantities for each metric
 
-    while line:     # Keep calculating similarities as long as queries are being passed in
+    while line:  # Keep calculating similarities as long as queries are being passed in
         # Retreive document ranking
         docs_with_scores = retrieveDocuments(line, inverted_index, doc_weighting_scheme, query_weighting_scheme)
-        ordered_list = sorted(docs_with_scores.items(), key=lambda x:x[1])  # Order the list
+        ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
 
-        num_relevant = len(relevance_judgments[query_num])
+       # num_relevant = len(relevance_judgments[query_num])
 
-        for (movieID, score) in reversed(ordered_list):       # Print each ranking member to the output file
+        for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
             out_file.write(str(query_num) + " " + str(movieID) + " " + str(score) + '\n')
-
+        '''
         for max_retrieved in num_retrieved:
             num = 0
             num_relevant_retrieved = 0
@@ -299,7 +295,7 @@ if __name__ == '__main__':
             # Since macro averaging is used, the precision/recall values for each query are added to a running total
             # that will be divided by the number of queries to compute the final macro average
             if max_retrieved == 10:
-                precision_total_before_macro_average_10 += num_relevant_retrieved/float(max_retrieved)
+                precision_total_before_macro_average_10 += num_relevant_retrieved / float(max_retrieved)
                 recall_total_before_macro_average_10 += num_relevant_retrieved / float(num_relevant)
             elif max_retrieved == 50:
                 precision_total_before_macro_average_50 += num_relevant_retrieved / float(max_retrieved)
@@ -313,29 +309,6 @@ if __name__ == '__main__':
 
         line = query_doc.readline()
         query_num = query_num + 1
-
+        '''
     out_file.close()
     query_doc.close()
-
-    # Calculate final metrics by dividing by number of queries and print results to console
-    final_precision_10 = precision_total_before_macro_average_10/float(query_num)
-    final_recall_10 = recall_total_before_macro_average_10/float(query_num)
-    final_precision_50 = precision_total_before_macro_average_50/float(query_num)
-    final_recall_50 = recall_total_before_macro_average_50/float(query_num)
-    final_precision_100 = precision_total_before_macro_average_100/float(query_num)
-    final_recall_100 = recall_total_before_macro_average_100/float(query_num)
-    final_precision_500 = precision_total_before_macro_average_500/float(query_num)
-    final_recall_500 = recall_total_before_macro_average_500/float(query_num)
-
-    print ("Precision for Top 10 Documents: " + str(final_precision_10) + "\n")
-    print ("Recall for Top 10 Documents: " + str(final_recall_10) + "\n")
-
-    print ("Precision for Top 50 Documents: " + str(final_precision_50) + "\n")
-    print ("Recall for Top 50 Documents: " + str(final_recall_50) + "\n")
-
-    print ("Precision for Top 100 Documents: " + str(final_precision_100) + "\n")
-    print ("Recall for Top 100 Documents: " + str(final_recall_100) + "\n")
-
-    print ("Precision for Top 500 Documents: " + str(final_precision_500) + "\n")
-    print ("Recall for Top 500 Documents: " + str(final_recall_500) + "\n")
-    '''
