@@ -7,6 +7,15 @@ import math
 import collections
 import re
 from PorterStemmer import *
+import pickle
+import string
+
+
+index_to_movies = dict()
+index_to_movies[1] = "The Avengers"
+index_to_movies[2] = "Venom"
+
+
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList():
@@ -93,12 +102,12 @@ def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_leng
 
 
 # Creates the inverted index by initializing each term in the corpus
-def createInvertedIndex(inverted_index, docID, tokens):
+def createInvertedIndex(inverted_index, movieID, tokens):
     for token in tokens:    # Iterate through each token in the document
         if token in inverted_index: # If the token is already in the inverted index
             current_posting_list_length = inverted_index[token].length  # Calculate length of posting list so far
             # If the last entry in the posting list is the same document, just increment the term frequency
-            if inverted_index[token].posting_list[current_posting_list_length - 1].docID == docID:
+            if inverted_index[token].posting_list[current_posting_list_length - 1].movieID == movieID:
                 inverted_index[token].posting_list[current_posting_list_length - 1].tf += 1
                 new_tf = inverted_index[token].posting_list[current_posting_list_length - 1].tf
                 # Update the max term frequency as needed
@@ -106,12 +115,12 @@ def createInvertedIndex(inverted_index, docID, tokens):
                     inverted_index[token].max_tf = new_tf
             # If docID not yet part of this posting list, add it to the end and increase the length of list by one
             else:
-                inverted_index[token].posting_list.append(PostingData(docID, 1))
+                inverted_index[token].posting_list.append(PostingData(movieID, 1))
                 inverted_index[token].length += 1
         # However, if term not yet in the index, create a whole new posting list and make this docID the first entry
         else:
             inverted_index[token] = PostingList()
-            inverted_index[token].posting_list.append(PostingData(docID, 1))
+            inverted_index[token].posting_list.append(PostingData(movieID, 1))
             inverted_index[token].max_tf = 1
 
 
@@ -170,19 +179,18 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
 
 def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
     tokens = nltk.word_tokenize(document)
+    tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
-    tokens = stemWords(tokens)      # PorterStemmer 
+    tokens = stemWords(tokens)      # PorterStemmer
 
     createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
 
 
 def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighting_scheme):
-    noSGML = removeSGML(query)  # Remove SGML
-    tokens = tokenizeText(noSGML)  # Tokenize the text
+    tokens = nltk.word_tokenize(query)
+    tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
     query_tokens = stemWords(query_tokens)
-    query_tokens.pop(0)     # Remove query number
-    query_tokens.pop(len(query_tokens) - 1)  # Remove period at end of query; I think it will provide false positives
 
     query_weights = [0] * len(inverted_index)   # Initialize vector to hold query weights
     query_appearances = collections.Counter()   # Initialize counter to hold appearances of each query term
@@ -201,9 +209,10 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 
 
 if __name__ == '__main__':
-    [doc_weighting_scheme, query_weighting_scheme, doc_folder, queries] = sys.argv[1:5]
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
+    doc_folder = "movies"
+    doc_weighting_scheme = "tfidf"
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')     # Open the file
