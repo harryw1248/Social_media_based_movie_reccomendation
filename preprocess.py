@@ -5,7 +5,7 @@ import re
 import os
 import sys
 import collections
-from porterStemmer import PorterStemmer
+from PorterStemmer import PorterStemmer
 
 # List of stopwords given on Canvas
 stopwords = ['a', 'all', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been',

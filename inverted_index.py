@@ -6,7 +6,6 @@ import os
 import math
 import collections
 import re
-from PorterStemmer import *
 import pickle
 import string
 
