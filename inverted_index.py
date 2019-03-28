@@ -126,7 +126,7 @@ def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inve
     # Iterate through each term in the query vector and assign nonzero weight if the term appears in inverted index
     for query_term in query_appearances:
         if query_term in inverted_index:
-            index_of_word = inverted_index.keys().index(query_term)     # Since ordered dict, calculate index of term
+            index_of_word = inverted_index.items().index(query_term)     # Since ordered dict, calculate index of term
             num_postings = inverted_index[query_term].length + 0.0      # Document frequency
             idf = math.log10(num_files / num_postings)                  # Inverse document frequency
             tf = query_appearances[query_term]                          # Term frequency
@@ -178,6 +178,8 @@ def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
     tokens = stemWords(tokens)      # PorterStemmer
+    for i in range(0, len(tokens)):
+        tokens[i] = tokens[i].lower()
 
     createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
 
@@ -188,6 +190,8 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
     query_tokens = stemWords(query_tokens)
+    for i in range(0, len(tokens)):
+        tokens[i] = tokens[i].lower()
 
     query_weights = [0] * len(inverted_index)   # Initialize vector to hold query weights
     query_appearances = collections.Counter()   # Initialize counter to hold appearances of each query term
