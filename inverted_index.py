@@ -171,7 +171,7 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
 def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
     tokens = nltk.word_tokenize(document)
     tokens = removeStopWords(tokens)  # Remove the stopwords
-    tokens = stemWords(tokens)      # PorterStemmer
+    tokens = stemWords(tokens)      # PorterStemmer fff
 
     createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
 
