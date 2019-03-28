@@ -1,6 +1,7 @@
 # Vinayak Ahluwalia
 # uniqname: vahluw
 import nltk
+from nltk import word_tokenize,sent_tokenize
 from preprocess import*
 import os
 import math
@@ -9,12 +10,9 @@ import re
 import pickle
 import string
 
-
 index_to_movies = dict()
 index_to_movies[1] = "The Avengers"
 index_to_movies[2] = "Venom"
-
-
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList():
@@ -28,8 +26,8 @@ class PostingList():
 # For each element in a posting list, the document ID and the corresponding term frequency are stored
 class PostingData():
 
-    def __init__(self, docID_in, tf_in):
-        self.docID = docID_in
+    def __init__(self, movieID_in, tf_in):
+        self.movieID = movieID_in
         self.tf = tf_in
 
 # When the dictionary of document weights is created, each document maps to a vector of weights and its document length
@@ -40,52 +38,52 @@ class SimilarityData:
 
 
 # Global variable that I use to store document term weightings so I could obey function signatures
-# Holds mapping of docID to weights vector as well as length of document
+# Holds mapping of movieID to weights vector as well as length of document
 doc_term_weightings = dict()
 
 # Computes the document vector weights using weighting scheme #1: TF-IDF
 def computeDocWeightsTFIDF(inverted_index, num_files):
     # Intializes global variable holding document term weightings to SimilarityData() objects
-    for docID in range(1, num_files + 1):
-        doc_term_weightings[docID] = SimilarityData(len(inverted_index))
+    for movieID in range(1, num_files + 1):
+        doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
 
     index = 0
     for term in inverted_index: # Iterates through each term in the inverted index
         for posting_data in inverted_index[term].posting_list:  # Iterates through each document in each posting list
             tf = posting_data.tf                        # tf is frequency of term in a document
             num_postings = inverted_index[term].length  # num_postings is document frequency
-            docID = posting_data.docID
+            movieID = posting_data.movieID
             if tf > 0.0:    # Only spend computational effort if term frequency is greater than zero
                 # tf-idf = tf * idf
                 idf = math.log10(num_files / num_postings)
-                doc_term_weightings[docID].weights[index] = tf * idf
-                doc_term_weightings[docID].doc_length += ((tf * idf) * (tf * idf))  # Update running total for length
+                doc_term_weightings[movieID].weights[index] = tf * idf
+                doc_term_weightings[movieID].doc_length += ((tf * idf) * (tf * idf))  # Update running total for length
             else:
                 continue
         index += 1  # Increment index to move to next term
 
-    for docID in range(1, num_files + 1):   # Finish calculating doc lengths
-        doc_term_weightings[docID].doc_length = math.sqrt(doc_term_weightings[docID].doc_length)
+    for movieID in range(1, num_files + 1):   # Finish calculating doc lengths
+        doc_term_weightings[movieID].doc_length = math.sqrt(doc_term_weightings[movieID].doc_length)
 
 # Computes the document vector weights using weighting scheme #2: Best-Weighting Probabilistic Weight
 def computeDocWeightsBWPW(inverted_index, num_files):
     # Intializes global variable holding document term weightings to SimilarityData() objects
-    for docID in range(1, num_files + 1):
-        doc_term_weightings[docID] = SimilarityData(len(inverted_index))
+    for movieID in range(1, num_files + 1):
+        doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
 
     index = 0
     for term in inverted_index:  # Iterates through each term in the inverted index
         max_tf = inverted_index[term].max_tf + 0.0  # Finds the maximum term frequency for each term
         for posting_data in inverted_index[term].posting_list:  # Iterates through each document in each posting list
             tf = posting_data.tf + 0.0
-            docID = posting_data.docID
+            movieID = posting_data.movieID
             weight = 0.5 + 0.5 * (tf/max_tf)    # Weight is calculated as (0.5 + 0.5 * (tf/max_tf))
-            doc_term_weightings[docID].weights[index] = weight
-            doc_term_weightings[docID].doc_length += weight * weight    # Running total of document length updated
+            doc_term_weightings[movieID].weights[index] = weight
+            doc_term_weightings[movieID].doc_length += weight * weight    # Running total of document length updated
         index += 1  # Increment index to move to next term
 
-    for docID in range(1, num_files + 1):   # Finally, each document length is finally calculated by taking square root
-        doc_term_weightings[docID].doc_length = math.sqrt(doc_term_weightings[docID].doc_length)
+    for movieID in range(1, num_files + 1):   # Finally, each document length is finally calculated by taking square root
+        doc_term_weightings[movieID].doc_length = math.sqrt(doc_term_weightings[movieID].doc_length)
 
 
 # Function that calculates the cosine similarity of document and query vectors
@@ -112,11 +110,11 @@ def createInvertedIndex(inverted_index, movieID, tokens):
                 # Update the max term frequency as needed
                 if inverted_index[token].max_tf < new_tf:
                     inverted_index[token].max_tf = new_tf
-            # If docID not yet part of this posting list, add it to the end and increase the length of list by one
+            # If movieID not yet part of this posting list, add it to the end and increase the length of list by one
             else:
                 inverted_index[token].posting_list.append(PostingData(movieID, 1))
                 inverted_index[token].length += 1
-        # However, if term not yet in the index, create a whole new posting list and make this docID the first entry
+        # However, if term not yet in the index, create a whole new posting list and make this movieID the first entry
         else:
             inverted_index[token] = PostingList()
             inverted_index[token].posting_list.append(PostingData(movieID, 1))
@@ -162,22 +160,23 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
     docs_with_at_least_one_matching_query_term = set()
     docs_with_scores = dict()
 
-    # Use a set to hold every docID in which at least one query term appears
+    # Use a set to hold every movieID in which at least one query term appears
     for query_term in query_appearances:
         if query_term in inverted_index:
             for posting_data in inverted_index[query_term].posting_list:
-                docs_with_at_least_one_matching_query_term.add(posting_data.docID)
+                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
-    # For each docID in the set, calculate the cosine similarity and store in a map of docID to similarity value
-    for docID in docs_with_at_least_one_matching_query_term:
-        docs_with_scores[docID] = calculateCosineSimilarity(doc_term_weightings[docID].weights, query_weights,
-                                                            doc_term_weightings[docID].doc_length, query_length)
+    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
+    for movieID in docs_with_at_least_one_matching_query_term:
+        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
+                                                            doc_term_weightings[movieID].doc_length, query_length)
 
     return docs_with_scores
 
 
 def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
-    tokens = nltk.word_tokenize(document)
+    #tokens = nltk.word_tokenize(document)
+    tokens = tokenizeText(document)
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
     tokens = stemWords(tokens)      # PorterStemmer
@@ -186,7 +185,8 @@ def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
 
 
 def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighting_scheme):
-    tokens = nltk.word_tokenize(query)
+    #tokens = nltk.word_tokenize(query)
+    tokens = tokenizeText(query)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
     query_tokens = stemWords(query_tokens)
@@ -210,7 +210,7 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 if __name__ == '__main__':
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
-    doc_folder = "movies"
+    doc_folder = "movies/"
     doc_weighting_scheme = "tfidf"
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
@@ -220,7 +220,7 @@ if __name__ == '__main__':
             continue
 
         line = file.read()                                              # Read the file
-        movieID = ''.join(ch for ch in filename if ch.isdigit())
+        movieID = int(''.join(ch for ch in filename if ch.isdigit()))
         indexDocument(line, doc_weighting_scheme, inverted_index, movieID)    # Update the inverted index
         file.close()
         num_files += 1
@@ -231,6 +231,16 @@ if __name__ == '__main__':
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
 
+    print(inverted_index)
+    pickle_out = open("harry_is_dumb.pickle", "wb")
+    pickle.dump(inverted_index, pickle_out)
+    pickle_out.close()
+    pickle_in = open("harry_is_dumb.pickle", "rb")
+    example = pickle.load(pickle_in)
+    print(example)
+    print(example["face"].posting_list[0].movieID)
+
+    '''
     # Dictionary to store relevance judgments for each queries from cranfield.reljudge
     relevance_judgments = dict()
     reljudge = open('cranfield.reljudge', 'r')
@@ -240,11 +250,11 @@ if __name__ == '__main__':
     while input_string:
         tokens = re.split("\s", input_string)
         query_num = int(tokens[0])
-        docID = int(tokens[1])
+        movieID = int(tokens[1])
 
         if query_num not in relevance_judgments:
             relevance_judgments[query_num] = list()
-        relevance_judgments[query_num].append(docID)
+        relevance_judgments[query_num].append(movieID)
         input_string = reljudge.readline()
 
     reljudge.close()
@@ -273,15 +283,15 @@ if __name__ == '__main__':
 
         num_relevant = len(relevance_judgments[query_num])
 
-        for (docID, score) in reversed(ordered_list):       # Print each ranking member to the output file
-            out_file.write(str(query_num) + " " + str(docID) + " " + str(score) + '\n')
+        for (movieID, score) in reversed(ordered_list):       # Print each ranking member to the output file
+            out_file.write(str(query_num) + " " + str(movieID) + " " + str(score) + '\n')
 
         for max_retrieved in num_retrieved:
             num = 0
             num_relevant_retrieved = 0
 
-            for (docID, score) in reversed(ordered_list):  # Calculate relevant docs retrieved for each quantity
-                if docID in relevance_judgments[query_num] and num < max_retrieved:
+            for (movieID, score) in reversed(ordered_list):  # Calculate relevant docs retrieved for each quantity
+                if movieID in relevance_judgments[query_num] and num < max_retrieved:
                     num_relevant_retrieved += 1
                 num += 1
 
@@ -328,3 +338,4 @@ if __name__ == '__main__':
 
     print ("Precision for Top 500 Documents: " + str(final_precision_500) + "\n")
     print ("Recall for Top 500 Documents: " + str(final_recall_500) + "\n")
+    '''
