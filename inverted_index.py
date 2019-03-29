@@ -284,6 +284,8 @@ if __name__ == '__main__':
         out_file.write(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
         print(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
         rank = rank + 1
+        if rank == 11:
+            break
         '''
         for max_retrieved in num_retrieved:
             num = 0
