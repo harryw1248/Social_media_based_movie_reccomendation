@@ -122,11 +122,12 @@ def createInvertedIndex(inverted_index, movieID, tokens):
 # Calculates weights for query vector using tf-idf scheme
 def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index):
     num_files = len(doc_term_weightings) + 0.0
+    l = list(inverted_index.keys())
 
     # Iterate through each term in the query vector and assign nonzero weight if the term appears in inverted index
     for query_term in query_appearances:
         if query_term in inverted_index:
-            index_of_word = inverted_index.items().index(query_term)     # Since ordered dict, calculate index of term
+            index_of_word = l.index(query_term)     # Since ordered dict, calculate index of term
             num_postings = inverted_index[query_term].length + 0.0      # Document frequency
             idf = math.log10(num_files / num_postings)                  # Inverse document frequency
             tf = query_appearances[query_term]                          # Term frequency
@@ -244,7 +245,7 @@ if __name__ == '__main__':
         computeDocWeightsTFIDF(inverted_index, num_files)
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
-
+    '''
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
     pickle_out1.close()
@@ -256,6 +257,7 @@ if __name__ == '__main__':
     inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
+    '''
     query_weighting_scheme = "tfidf"
 
     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
@@ -280,9 +282,10 @@ if __name__ == '__main__':
         ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
 
        # num_relevant = len(relevance_judgments[query_num])
-
+        rank = 1
         for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-            out_file.write(str(query_num) + " " + str(movieID) + " " + str(score) + '\n')
+            out_file.write(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
+            rank = rank + 1
         '''
         for max_retrieved in num_retrieved:
             num = 0
