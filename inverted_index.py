@@ -275,17 +275,15 @@ if __name__ == '__main__':
     precision_total_before_macro_average_500 = 0.0
     recall_total_before_macro_average_500 = 0.0
     num_retrieved = [10, 50, 100, 500]  # Different document ranking quantities for each metric
-
-    while line:  # Keep calculating similarities as long as queries are being passed in
-        # Retreive document ranking
-        docs_with_scores = retrieveDocuments(line, inverted_index, doc_weighting_scheme, query_weighting_scheme)
-        ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
+    docs_with_scores = retrieveDocuments(line, inverted_index, doc_weighting_scheme, query_weighting_scheme)
+    ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
 
        # num_relevant = len(relevance_judgments[query_num])
-        rank = 1
-        for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-            out_file.write(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
-            rank = rank + 1
+    rank = 1
+    for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
+        out_file.write(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
+        print(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
+        rank = rank + 1
         '''
         for max_retrieved in num_retrieved:
             num = 0
