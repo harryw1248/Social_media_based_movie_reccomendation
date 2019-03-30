@@ -213,15 +213,16 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 if __name__ == '__main__':
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
-    doc_folder = "movies/"
+    doc_folder = "All_Movies/"
     doc_weighting_scheme = "tfidf"
     queries = "queries.txt"
     current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
-        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
-        if "movie" in filename:
+        if current_index % 3 or current_index % 2:
+            current_index += 1
             continue
+        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
 
         if filename == ".DS_Store":
             continue
@@ -229,12 +230,10 @@ if __name__ == '__main__':
         index1 = 7
         index2 = filename.find(".")
         new_string = filename[index1:index2]
-        print(new_string)
+        print(new_string + ", Index: " + str (current_index))
         index_to_movies[current_index] = new_string
-        new_file = open(os.getcwd() + "/" + doc_folder + "movie" + str(current_index) + ".txt", 'w')
         line = file.read()
         movieID = current_index
-        new_file.write(line)
         indexDocument(line, doc_weighting_scheme, inverted_index, movieID)    # Update the inverted index
         file.close()
         num_files += 1
