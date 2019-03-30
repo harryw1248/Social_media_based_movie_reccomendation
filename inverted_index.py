@@ -213,15 +213,12 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 if __name__ == '__main__':
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
-    doc_folder = "All_Movies/"
+    doc_folder = "Subset4/"
     doc_weighting_scheme = "tfidf"
-    queries = "queries.txt"
+    queries = "Posts.txt"
     current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
-        if current_index % 3 or current_index % 2:
-            current_index += 1
-            continue
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
 
         if filename == ".DS_Store":
@@ -244,24 +241,24 @@ if __name__ == '__main__':
         computeDocWeightsTFIDF(inverted_index, num_files)
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
-    '''
+
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
     pickle_out1.close()
     pickle_out2 = open("doc_term_weightings.pickle", "wb")
-    pickle.dump(inverted_index, pickle_out2)
+    pickle.dump(doc_term_weightings, pickle_out2)
     pickle_out2.close()
 
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
-    '''
+
     query_weighting_scheme = "tfidf"
 
     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
     out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
-    line = query_doc.readline()
+    line = query_doc.read()
     query_num = 1
 
     # Variables that will hold different metric values
@@ -279,9 +276,20 @@ if __name__ == '__main__':
 
        # num_relevant = len(relevance_judgments[query_num])
     rank = 1
+
+    print("Your Top 10 Movie Recommendations:\n")
+    out_file.write("Your Top 10 Movie Recommendations:\n")
+
     for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-        out_file.write(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
-        print(str(rank) + " " + index_to_movies[movieID] + " " + str(score) + '\n')
+        movie_title = index_to_movies[movieID]
+
+        if "_" in movie_title:
+            movie_title = movie_title.replace("_", ":")
+
+        # TODO: Print out synopsis for each selected movie
+
+        out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
+        print(str(rank) + ". " + movie_title+ " " + str(score) + '\n')
         rank = rank + 1
         if rank == 11:
             break
