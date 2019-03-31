@@ -213,7 +213,7 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 if __name__ == '__main__':
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
-    doc_folder = "Subset4/"
+    doc_folder = "Testing/"
     doc_weighting_scheme = "tfidf"
     queries = "Posts.txt"
     current_index = 0
@@ -228,6 +228,9 @@ if __name__ == '__main__':
         index2 = filename.find(".")
         new_string = filename[index1:index2]
         print(new_string + ", Index: " + str (current_index))
+
+
+        # TODO: Download tags from other dataset for cast members and other genre tags and add to the "line" object
         index_to_movies[current_index] = new_string
         line = file.read()
         movieID = current_index
