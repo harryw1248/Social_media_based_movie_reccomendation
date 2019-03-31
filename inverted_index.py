@@ -212,13 +212,13 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 
 
 if __name__ == '__main__':
-    #inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
+    inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
     doc_folder = "Testing/"
     doc_weighting_scheme = "tfidf"
     queries = "Posts.txt"
     current_index = 0
-    '''
+
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
 
@@ -252,12 +252,17 @@ if __name__ == '__main__':
     pickle_out2 = open("doc_term_weightings.pickle", "wb")
     pickle.dump(doc_term_weightings, pickle_out2)
     pickle_out2.close()
-    '''
+    pickle_out3 = open("index_to_movies.pickle", "wb")
+    pickle.dump(index_to_movies, pickle_out3)
+    pickle_out3.close()
+
     t0 = time.time()
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
+    pickle_in = open("index_to_movies.pickle", "rb")
+    index_to_movies = pickle.load(pickle_in)
 
     query_weighting_scheme = "tfidf"
 
