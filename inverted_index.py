@@ -9,6 +9,7 @@ import collections
 import re
 import pickle
 import string
+import time
 
 index_to_movies = dict()
 
@@ -211,13 +212,13 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
 
 
 if __name__ == '__main__':
-    inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
+    #inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     num_files = 0
     doc_folder = "Testing/"
     doc_weighting_scheme = "tfidf"
     queries = "Posts.txt"
     current_index = 0
-
+    '''
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
 
@@ -244,14 +245,15 @@ if __name__ == '__main__':
         computeDocWeightsTFIDF(inverted_index, num_files)
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
-
+    
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
     pickle_out1.close()
     pickle_out2 = open("doc_term_weightings.pickle", "wb")
     pickle.dump(doc_term_weightings, pickle_out2)
     pickle_out2.close()
-
+    '''
+    t0 = time.time()
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
@@ -279,7 +281,7 @@ if __name__ == '__main__':
 
        # num_relevant = len(relevance_judgments[query_num])
     rank = 1
-
+    print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")    # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
     out_file.write("Your Top 10 Movie Recommendations:\n")
 
@@ -327,3 +329,4 @@ if __name__ == '__main__':
         '''
     out_file.close()
     query_doc.close()
+
