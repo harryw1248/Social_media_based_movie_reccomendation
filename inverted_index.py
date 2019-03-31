@@ -11,7 +11,6 @@ import pickle
 import string
 import time
 
-index_to_movies = dict()
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList():
@@ -211,15 +210,10 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
 
 
-if __name__ == '__main__':
-    inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
-    num_files = 0
-    doc_folder = "Testing/"
-    doc_weighting_scheme = "tfidf"
-    queries = "Posts.txt"
+def create_data(doc_weighting_scheme, inverted_index, num_files):
     current_index = 0
 
-    for filename in os.listdir(os.getcwd() + "/" + doc_folder):         # Iterates through each doc in passed-in folder
+    for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
 
         if filename == ".DS_Store":
@@ -228,14 +222,13 @@ if __name__ == '__main__':
         index1 = 7
         index2 = filename.find(".")
         new_string = filename[index1:index2]
-        print(new_string + ", Index: " + str (current_index))
-
+        print(new_string + ", Index: " + str(current_index))
 
         # TODO: Download tags from other dataset for cast members and other genre tags and add to the "line" object
         index_to_movies[current_index] = new_string
         line = file.read()
         movieID = current_index
-        indexDocument(line, doc_weighting_scheme, inverted_index, movieID)    # Update the inverted index
+        indexDocument(line, doc_weighting_scheme, inverted_index, movieID)  # Update the inverted index
         file.close()
         num_files += 1
         current_index = current_index + 1
@@ -245,7 +238,7 @@ if __name__ == '__main__':
         computeDocWeightsTFIDF(inverted_index, num_files)
     elif doc_weighting_scheme == "bwpw":
         computeDocWeightsBWPW(inverted_index, num_files)
-    
+
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
     pickle_out1.close()
@@ -256,14 +249,28 @@ if __name__ == '__main__':
     pickle.dump(index_to_movies, pickle_out3)
     pickle_out3.close()
 
-    t0 = time.time()
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
-    pickle_in = open("doc_term_weightings.pickle", "rb")
-    doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
 
+if __name__ == '__main__':
+    queries = "Posts.txt"
+    create_index = False
+    index_to_movies = dict()
+    doc_weighting_scheme = "tfidf"
+    inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
+    doc_folder = "Testing/"
+    num_files = 0
+
+    if create_index:
+        create_data(doc_weighting_scheme, inverted_index, num_files)
+
+    else:
+        pickle_in = open("inverted_index.pickle", "rb")
+        inverted_index = pickle.load(pickle_in)
+        pickle_in = open("doc_term_weightings.pickle", "rb")
+        doc_term_weightings = pickle.load(pickle_in)
+        pickle_in = open("index_to_movies.pickle", "rb")
+        index_to_movies = pickle.load(pickle_in)
+
+    t0 = time.time()
     query_weighting_scheme = "tfidf"
 
     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
@@ -303,35 +310,7 @@ if __name__ == '__main__':
         rank = rank + 1
         if rank == 11:
             break
-        '''
-        for max_retrieved in num_retrieved:
-            num = 0
-            num_relevant_retrieved = 0
 
-            for (movieID, score) in reversed(ordered_list):  # Calculate relevant docs retrieved for each quantity
-                if movieID in relevance_judgments[query_num] and num < max_retrieved:
-                    num_relevant_retrieved += 1
-                num += 1
-
-            # Update running totals for appropriate metrics
-            # Since macro averaging is used, the precision/recall values for each query are added to a running total
-            # that will be divided by the number of queries to compute the final macro average
-            if max_retrieved == 10:
-                precision_total_before_macro_average_10 += num_relevant_retrieved / float(max_retrieved)
-                recall_total_before_macro_average_10 += num_relevant_retrieved / float(num_relevant)
-            elif max_retrieved == 50:
-                precision_total_before_macro_average_50 += num_relevant_retrieved / float(max_retrieved)
-                recall_total_before_macro_average_50 += num_relevant_retrieved / float(num_relevant)
-            elif max_retrieved == 100:
-                precision_total_before_macro_average_100 += num_relevant_retrieved / float(max_retrieved)
-                recall_total_before_macro_average_100 += num_relevant_retrieved / float(num_relevant)
-            elif max_retrieved == 500:
-                precision_total_before_macro_average_500 += num_relevant_retrieved / float(max_retrieved)
-                recall_total_before_macro_average_500 += num_relevant_retrieved / float(num_relevant)
-
-        line = query_doc.readline()
-        query_num = query_num + 1
-        '''
     out_file.close()
     query_doc.close()
 
