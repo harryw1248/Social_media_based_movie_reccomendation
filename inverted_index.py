@@ -2,7 +2,7 @@
 # uniqname: vahluw
 import nltk
 from nltk import word_tokenize,sent_tokenize
-from preprocess import*
+from preprocess import removeStopWords, stemWords
 import os
 import math
 import collections
@@ -10,6 +10,7 @@ import re
 import pickle
 import string
 import time
+import nltk
 
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
@@ -174,11 +175,10 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
 
 
 def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
-    #tokens = nltk.word_tokenize(document)
-    tokens = tokenizeText(document)
+    tokens = nltk.word_tokenize(document)
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
-    tokens = stemWords(tokens)      # PorterStemmer
+    #tokens = stemWords(tokens)      # PorterStemmer
     for i in range(0, len(tokens)):
         tokens[i] = tokens[i].lower()
 
@@ -186,11 +186,11 @@ def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
 
 
 def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighting_scheme):
-    #tokens = nltk.word_tokenize(query)
-    tokens = tokenizeText(query)
+    tokens = nltk.word_tokenize(query)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    query_tokens = stemWords(query_tokens)
+    #query_tokens = stemWords(query_tokens)
+
     for i in range(0, len(tokens)):
         tokens[i] = tokens[i].lower()
 
@@ -252,7 +252,7 @@ def create_data(doc_weighting_scheme, inverted_index, num_files):
 
 if __name__ == '__main__':
     queries = "Posts.txt"
-    create_index = False
+    create_index = True
     index_to_movies = dict()
     doc_weighting_scheme = "tfidf"
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
