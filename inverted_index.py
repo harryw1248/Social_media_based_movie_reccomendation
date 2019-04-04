@@ -1,16 +1,23 @@
-# Vinayak Ahluwalia
-# uniqname: vahluw
-import nltk
-from nltk import word_tokenize,sent_tokenize
 from preprocess import removeStopWords, stemWords
-import os
 import math
 import collections
-import re
 import pickle
 import string
 import time
 import nltk
+import getpass
+import calendar
+import os
+import platform
+import sys
+import urllib.request
+
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
@@ -174,8 +181,18 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
     return docs_with_scores
 
 
-def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
+def indexDocument(document, doc_weighting_scheme, inverted_index, movieID, use_kaggle = False):
     tokens = nltk.word_tokenize(document)
+
+    if use_kaggle:
+        pickle_in = open("kaggle.pickle", "rb")
+        kaggle_dict = pickle.load(pickle_in)
+
+        for (movieID, title) in index_to_movies:
+            if title in kaggle_dict.keys():
+                for keyword in kaggle_dict[title]:
+                    tokens.append(keyword)
+
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
     tokens = stemWords(tokens)      # PorterStemmer
@@ -210,11 +227,15 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     elif query_weighting_scheme == "bwpw":
         query_length = calculateQueryDataBWPW(query_weights, query_appearances, query_length, inverted_index)
 
+    pickle_out = open("query_vector.pickle", "wb")
+    pickle_out.write(query_weights)
+    pickle_out.close()
+
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
     return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
 
 
-def create_data(doc_weighting_scheme, inverted_index, num_files):
+def create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle=False):
     current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
@@ -225,14 +246,20 @@ def create_data(doc_weighting_scheme, inverted_index, num_files):
 
         index1 = 7
         index2 = filename.find(".")
-        new_string = filename[index1:index2]
-        print(new_string + ", Index: " + str(current_index))
+        movie_title = filename[index1:index2]
 
-        # TODO: Download tags from other dataset for cast members and other genre tags and add to the "line" object
-        index_to_movies[current_index] = new_string
+        if "_" in movie_title:
+            movie_title = movie_title.replace("_", ":")
+
+        if ", The" in movie_title:
+            index = movie_title.find(", The")
+            movie_title = "The " + movie_title[0: index]
+        print(movie_title + ", Index: " + str(current_index))
+
+        index_to_movies[current_index] = movie_title
         line = file.read()
         movieID = current_index
-        indexDocument(line, doc_weighting_scheme, inverted_index, movieID)  # Update the inverted index
+        indexDocument(line, doc_weighting_scheme, inverted_index, movieID, use_kaggle)  # Update the inverted index
         file.close()
         num_files += 1
         current_index = current_index + 1
@@ -254,17 +281,62 @@ def create_data(doc_weighting_scheme, inverted_index, num_files):
     pickle_out3.close()
 
 
+def get_metadata(synopsis_info, index_to_movies):
+    """ Logging into our own profile """
+
+    # try:
+    global driver
+
+    options = Options()
+
+    chromedriver = "/Users/Vinchenzo4335/PycharmProjects/EECS486/Final_Project/chromedriver"
+    os.environ["webdriver.chrome.driver"] = chromedriver
+    # chrome_options.add_argument("--headless")
+    options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+
+    #  Code to disable notifications pop up of Chrome Browser
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--mute-audio")
+    # options.add_argument("headless")
+
+    driver = webdriver.Chrome(executable_path=chromedriver, options=options)
+    num_found = 0
+    movie_num = 1
+    for movieID in index_to_movies:
+        movie_title = index_to_movies[movieID]
+        movie_title = movie_title.lower()
+        movie_title = movie_title.replace(" ", "_")
+        try:
+            driver.get("https://www.rottentomatoes.com/m/" + movie_title)
+            synopsis = driver.find_element_by_id('movieSynopsis').text
+            print(str(movie_num) + " " + movie_title + " FOUND")
+            synopsis_info[movieID] = synopsis
+            num_found += 1
+        except:
+            synopsis_info[movieID] = "No synopsis found."
+            print(str(movie_num) + " " +movie_title + " NOT FOUND")
+        movie_num += 1
+
+    
+    print(num_found)
+
 if __name__ == '__main__':
+
     queries = "Posts.txt"
-    create_index = True
+    create_index = False
+    read_in_synopsis_info = True
+    use_kaggle = False
+
     index_to_movies = dict()
+    synopsis_info = dict()
     doc_weighting_scheme = "tfidf"
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     doc_folder = "Testing/"
     num_files = 0
 
     if create_index:
-        create_data(doc_weighting_scheme, inverted_index, num_files)
+        create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle)
 
     else:
         pickle_in = open("inverted_index.pickle", "rb")
@@ -274,6 +346,14 @@ if __name__ == '__main__':
         pickle_in = open("index_to_movies.pickle", "rb")
         index_to_movies = pickle.load(pickle_in)
 
+    if read_in_synopsis_info:
+        get_metadata(synopsis_info, index_to_movies)
+
+    else:
+        pickle_in = open("synopsis_info.pickle", "rb")
+        synopsis_info = pickle.load(pickle_in)
+
+
     t0 = time.time()
     query_weighting_scheme = "tfidf"
 
@@ -282,20 +362,10 @@ if __name__ == '__main__':
     line = query_doc.read()
     query_num = 1
 
-    # Variables that will hold different metric values
-    precision_total_before_macro_average_10 = 0.0
-    recall_total_before_macro_average_10 = 0.0
-    precision_total_before_macro_average_50 = 0.0
-    recall_total_before_macro_average_50 = 0.0
-    precision_total_before_macro_average_100 = 0.0
-    recall_total_before_macro_average_100 = 0.0
-    precision_total_before_macro_average_500 = 0.0
-    recall_total_before_macro_average_500 = 0.0
-    num_retrieved = [10, 50, 100, 500]  # Different document ranking quantities for each metric
     docs_with_scores = retrieveDocuments(line, inverted_index, doc_weighting_scheme, query_weighting_scheme)
     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
 
-       # num_relevant = len(relevance_judgments[query_num])
+
     rank = 1
     print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")    # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
@@ -304,17 +374,21 @@ if __name__ == '__main__':
     for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
         movie_title = index_to_movies[movieID]
 
-        if "_" in movie_title:
-            movie_title = movie_title.replace("_", ":")
-
-        # TODO: Print out synopsis for each selected movie
-
         out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
         print(str(rank) + ". " + movie_title+ " " + str(score) + '\n')
+
+        if movie_title in synopsis_info:
+            print(synopsis_info[movie_title] + '\n')
+            out_file.write(synopsis_info[movie_title] + '\n')
+        else:
+            print("No synopsis found.")
+            out_file.write("No synopsis found.")
+
         rank = rank + 1
         if rank == 11:
             break
 
     out_file.close()
     query_doc.close()
+
 
