@@ -178,7 +178,8 @@ def indexDocument(document, doc_weighting_scheme, inverted_index, movieID):
     tokens = nltk.word_tokenize(document)
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
-    #tokens = stemWords(tokens)      # PorterStemmer
+    tokens = stemWords(tokens)      # PorterStemmer
+
     for i in range(0, len(tokens)):
         tokens[i] = tokens[i].lower()
 
@@ -189,10 +190,13 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     tokens = nltk.word_tokenize(query)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    #query_tokens = stemWords(query_tokens)
+    query_tokens = stemWords(query_tokens)
 
-    for i in range(0, len(tokens)):
-        tokens[i] = tokens[i].lower()
+    out_file_query = open("query_tokens.txt", 'w')
+
+    for i in range(0, len(query_tokens)):
+        query_tokens[i] = query_tokens[i].lower()
+        out_file_query.write(query_tokens[i] + '\n')
 
     query_weights = [0] * len(inverted_index)   # Initialize vector to hold query weights
     query_appearances = collections.Counter()   # Initialize counter to hold appearances of each query term
