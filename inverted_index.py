@@ -282,7 +282,7 @@ def create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle=Fals
     pickle_out3.close()
 
 
-def get_metadata(synopsis_info, index_to_movies):
+def get_metadata(synopsis_image_info, index_to_movies):
     """ Logging into our own profile """
 
     # try:
@@ -315,10 +315,13 @@ def get_metadata(synopsis_info, index_to_movies):
             index = movie_title.find(", The")
             movie_title = "The " + movie_title[0: index]
 
-        index_to_movies[movieID] = movie_title
+        if ", a" in movie_title:
+            index = movie_title.find(", a")
+            movie_title = "A " + movie_title[0: index]
 
         movie_title = movie_title.lower()
         movie_title = movie_title.replace(" ", "_")
+        index_to_movies[movieID] = movie_title
 
         if ":" in movie_title:
             movie_title = movie_title.replace(":", "")
@@ -332,11 +335,16 @@ def get_metadata(synopsis_info, index_to_movies):
         if "&" in movie_title:
             movie_title = movie_title.replace("&", "and")
 
+        if "__" in movie_title:
+            movie_title = movie_title.replace("__", "_")
+
+        url = ""
         try:
             driver.get("https://www.rottentomatoes.com/m/" + movie_title)
             synopsis = driver.find_element_by_id('movieSynopsis').text
-            #print(str(movie_num) + " " + movie_title + " FOUND")
-            synopsis_info[movieID] = synopsis
+            url = driver.find_element_by_id('posterImage js-lazyLoad').get_attribute('src')
+            print(url)
+            synopsis_image_info[movieID] = (synopsis,url)
             num_found += 1
         except:
             try:
@@ -344,27 +352,28 @@ def get_metadata(synopsis_info, index_to_movies):
                     movie_title = movie_title[4: len(movie_title)]
                 driver.get("https://www.rottentomatoes.com/m/" + movie_title)
                 synopsis = driver.find_element_by_id('movieSynopsis').text
-                synopsis_info[movieID] = synopsis
+                url = driver.find_element_by_id('posterImage js-lazyLoad').get_attribute('src')
+                synopsis_image_info[movieID] = (synopsis,url)
                 num_found += 1
             except:
-                synopsis_info[movieID] = "No synopsis found."
+                synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
                 print(str(movie_num) + " " + movie_title + " NOT FOUND")
                 movie_num += 1
                 continue
 
-            synopsis_info[movieID] = "No synopsis found."
+            synopsis_image_info[movieID] = "No synopsis found."
             print(str(movie_num) + " " +movie_title + " NOT FOUND")
 
         movie_num += 1
 
     print(num_found)
 
-    pickle_out1 = open("synopsis_info.pickle", "wb")
-    pickle_out1.write(synopsis_info)
+    pickle_out1 = open("synopsis_image_info.pickle", "wb")
+    pickle.dump(synopsis_image_info, pickle_out1)
     pickle_out1.close()
 
     pickle_out2 = open("index_to_movies.pickle", "wb")
-    pickle_out2.write(index_to_movies)
+    pickle.dump(index_to_movies, pickle_out2)
     pickle_out2.close()
 
 if __name__ == '__main__':
@@ -375,7 +384,7 @@ if __name__ == '__main__':
     use_kaggle = False
 
     index_to_movies = dict()
-    synopsis_info = dict()
+    synopsis_image_info = dict()
     doc_weighting_scheme = "tfidf"
     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
     doc_folder = "Testing/"
@@ -393,7 +402,7 @@ if __name__ == '__main__':
         index_to_movies = pickle.load(pickle_in)
 
     if read_in_synopsis_info:
-        get_metadata(synopsis_info, index_to_movies)
+        get_metadata(synopsis_image_info, index_to_movies)
 
     else:
         pickle_in = open("synopsis_info.pickle", "rb")
@@ -422,8 +431,10 @@ if __name__ == '__main__':
 
         out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
         print(str(rank) + ". " + movie_title+ " " + str(score) + '\n')
-        print(synopsis_info[movie_title] + '\n')
-        out_file.write(synopsis_info[movie_title] + '\n')
+        print(synopsis_image_info[movie_title][0] + '\n')
+        out_file.write(synopsis_image_info[movie_title][0] + '\n')
+        print(synopsis_image_info[movie_title][1] + '\n')
+        out_file.write(synopsis_image_info[movie_title][1] + '\n')
 
         rank += 1
         if rank == 11:
