@@ -326,8 +326,11 @@ def get_metadata(synopsis_info, index_to_movies):
         if "'" in movie_title:
             movie_title = movie_title.replace("'", "")
 
-        if movie_title[0:4] == "the_":
-            movie_title = movie_title[4: len(movie_title)]
+        if "-" in movie_title:
+            movie_title = movie_title.replace("-", "")
+
+        if "&" in movie_title:
+            movie_title = movie_title.replace("&", "and")
 
         try:
             driver.get("https://www.rottentomatoes.com/m/" + movie_title)
@@ -336,8 +339,22 @@ def get_metadata(synopsis_info, index_to_movies):
             synopsis_info[movieID] = synopsis
             num_found += 1
         except:
+            try:
+                if movie_title[0:4] == "the_":
+                    movie_title = movie_title[4: len(movie_title)]
+                driver.get("https://www.rottentomatoes.com/m/" + movie_title)
+                synopsis = driver.find_element_by_id('movieSynopsis').text
+                synopsis_info[movieID] = synopsis
+                num_found += 1
+            except:
+                synopsis_info[movieID] = "No synopsis found."
+                print(str(movie_num) + " " + movie_title + " NOT FOUND")
+                movie_num += 1
+                continue
+
             synopsis_info[movieID] = "No synopsis found."
             print(str(movie_num) + " " +movie_title + " NOT FOUND")
+
         movie_num += 1
 
     print(num_found)
@@ -405,15 +422,10 @@ if __name__ == '__main__':
 
         out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
         print(str(rank) + ". " + movie_title+ " " + str(score) + '\n')
+        print(synopsis_info[movie_title] + '\n')
+        out_file.write(synopsis_info[movie_title] + '\n')
 
-        if movie_title in synopsis_info:
-            print(synopsis_info[movie_title] + '\n')
-            out_file.write(synopsis_info[movie_title] + '\n')
-        else:
-            print("No synopsis found.")
-            out_file.write("No synopsis found.")
-
-        rank = rank + 1
+        rank += 1
         if rank == 11:
             break
 
