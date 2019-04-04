@@ -319,7 +319,15 @@ def get_metadata(synopsis_info, index_to_movies):
 
         movie_title = movie_title.lower()
         movie_title = movie_title.replace(" ", "_")
-        movie_title = movie_title.replace(":", "")
+
+        if ":" in movie_title:
+            movie_title = movie_title.replace(":", "")
+
+        if "'" in movie_title:
+            movie_title = movie_title.replace("'", "")
+
+        if movie_title[0:4] == "the_":
+            movie_title = movie_title[4: len(movie_title)]
 
         try:
             driver.get("https://www.rottentomatoes.com/m/" + movie_title)
