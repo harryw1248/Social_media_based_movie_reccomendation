@@ -254,6 +254,7 @@ def create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle=Fals
         if ", The" in movie_title:
             index = movie_title.find(", The")
             movie_title = "The " + movie_title[0: index]
+
         print(movie_title + ", Index: " + str(current_index))
 
         index_to_movies[current_index] = movie_title
@@ -303,14 +304,27 @@ def get_metadata(synopsis_info, index_to_movies):
     driver = webdriver.Chrome(executable_path=chromedriver, options=options)
     num_found = 0
     movie_num = 1
+
     for movieID in index_to_movies:
         movie_title = index_to_movies[movieID]
+
+        if "_" in movie_title:
+            movie_title = movie_title.replace("_", ":")
+
+        if ", The" in movie_title:
+            index = movie_title.find(", The")
+            movie_title = "The " + movie_title[0: index]
+
+        index_to_movies[movieID] = movie_title
+
         movie_title = movie_title.lower()
         movie_title = movie_title.replace(" ", "_")
+        movie_title = movie_title.replace(":", "")
+
         try:
             driver.get("https://www.rottentomatoes.com/m/" + movie_title)
             synopsis = driver.find_element_by_id('movieSynopsis').text
-            print(str(movie_num) + " " + movie_title + " FOUND")
+            #print(str(movie_num) + " " + movie_title + " FOUND")
             synopsis_info[movieID] = synopsis
             num_found += 1
         except:
@@ -318,8 +332,15 @@ def get_metadata(synopsis_info, index_to_movies):
             print(str(movie_num) + " " +movie_title + " NOT FOUND")
         movie_num += 1
 
-    
     print(num_found)
+
+    pickle_out1 = open("synopsis_info.pickle", "wb")
+    pickle_out1.write(synopsis_info)
+    pickle_out1.close()
+
+    pickle_out2 = open("index_to_movies.pickle", "wb")
+    pickle_out2.write(index_to_movies)
+    pickle_out2.close()
 
 if __name__ == '__main__':
 
