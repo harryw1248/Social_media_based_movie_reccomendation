@@ -227,9 +227,9 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     elif query_weighting_scheme == "bwpw":
         query_length = calculateQueryDataBWPW(query_weights, query_appearances, query_length, inverted_index)
 
-    pickle_out = open("query_vector.pickle", "wb")
-    pickle_out.write(query_weights)
-    pickle_out.close()
+    #pickle_out = open("query_vector.pickle", "wb")
+    #pickle_out.write(query_weights)
+    #pickle_out.close()
 
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
     return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
@@ -308,9 +308,6 @@ def get_metadata(synopsis_image_info, index_to_movies):
     for movieID in index_to_movies:
         movie_title = index_to_movies[movieID]
 
-        if "_" in movie_title:
-            movie_title = movie_title.replace("_", ":")
-
         if ", The" in movie_title:
             index = movie_title.find(", The")
             movie_title = "The " + movie_title[0: index]
@@ -321,7 +318,6 @@ def get_metadata(synopsis_image_info, index_to_movies):
 
         movie_title = movie_title.lower()
         movie_title = movie_title.replace(" ", "_")
-        index_to_movies[movieID] = movie_title
 
         if ":" in movie_title:
             movie_title = movie_title.replace(":", "")
@@ -338,31 +334,35 @@ def get_metadata(synopsis_image_info, index_to_movies):
         if "__" in movie_title:
             movie_title = movie_title.replace("__", "_")
 
-        url = ""
         try:
             driver.get("https://www.rottentomatoes.com/m/" + movie_title)
             synopsis = driver.find_element_by_id('movieSynopsis').text
-            url = driver.find_element_by_id('posterImage js-lazyLoad').get_attribute('src')
-            print(url)
-            synopsis_image_info[movieID] = (synopsis,url)
+            url = driver.find_element_by_class_name('posterImage').get_attribute('src')
+
+            if url is None:
+                url = "No image available."
+
+            synopsis_image_info[movieID] = (synopsis, url)
             num_found += 1
         except:
-            try:
-                if movie_title[0:4] == "the_":
+            if movie_title[0:4] == "the_":
+                try:
                     movie_title = movie_title[4: len(movie_title)]
-                driver.get("https://www.rottentomatoes.com/m/" + movie_title)
-                synopsis = driver.find_element_by_id('movieSynopsis').text
-                url = driver.find_element_by_id('posterImage js-lazyLoad').get_attribute('src')
-                synopsis_image_info[movieID] = (synopsis,url)
-                num_found += 1
-            except:
+                    driver.get("https://www.rottentomatoes.com/m/" + movie_title)
+                    synopsis = driver.find_element_by_id('movieSynopsis').text
+                    url = driver.find_element_by_class_name('posterImage').get_attribute('src')
+
+                    if url is None:
+                        url = "Image not found."
+
+                    synopsis_image_info[movieID] = (synopsis, url)
+                    num_found += 1
+                except:
+                    synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
+                    print(str(movie_num) + " " + movie_title + " NOT FOUND")
+            else:
                 synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
                 print(str(movie_num) + " " + movie_title + " NOT FOUND")
-                movie_num += 1
-                continue
-
-            synopsis_image_info[movieID] = "No synopsis found."
-            print(str(movie_num) + " " +movie_title + " NOT FOUND")
 
         movie_num += 1
 
@@ -380,7 +380,7 @@ if __name__ == '__main__':
 
     queries = "Posts.txt"
     create_index = False
-    read_in_synopsis_info = True
+    read_in_synopsis_info = False
     use_kaggle = False
 
     index_to_movies = dict()
@@ -405,8 +405,8 @@ if __name__ == '__main__':
         get_metadata(synopsis_image_info, index_to_movies)
 
     else:
-        pickle_in = open("synopsis_info.pickle", "rb")
-        synopsis_info = pickle.load(pickle_in)
+        pickle_in = open("synopsis_image_info.pickle", "rb")
+        synopsis_image_info = pickle.load(pickle_in)
 
 
     t0 = time.time()
@@ -431,10 +431,8 @@ if __name__ == '__main__':
 
         out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
         print(str(rank) + ". " + movie_title+ " " + str(score) + '\n')
-        print(synopsis_image_info[movie_title][0] + '\n')
-        out_file.write(synopsis_image_info[movie_title][0] + '\n')
-        print(synopsis_image_info[movie_title][1] + '\n')
-        out_file.write(synopsis_image_info[movie_title][1] + '\n')
+        print(synopsis_image_info[movieID][0] + '\n')
+        out_file.write(synopsis_image_info[movieID][0] + '\n')
 
         rank += 1
         if rank == 11:
