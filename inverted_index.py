@@ -235,53 +235,6 @@ def retrieveDocuments(query, inverted_index, doc_weighting_scheme, query_weighti
     return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
 
 
-def create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle=False):
-    current_index = 0
-
-    for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
-        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
-
-        if filename == ".DS_Store":
-            continue
-
-        index1 = 7
-        index2 = filename.find(".")
-        movie_title = filename[index1:index2]
-
-        if "_" in movie_title:
-            movie_title = movie_title.replace("_", ":")
-
-        if ", The" in movie_title:
-            index = movie_title.find(", The")
-            movie_title = "The " + movie_title[0: index]
-
-        print(movie_title + ", Index: " + str(current_index))
-
-        index_to_movies[current_index] = movie_title
-        line = file.read()
-        movieID = current_index
-        indexDocument(line, doc_weighting_scheme, inverted_index, movieID, use_kaggle)  # Update the inverted index
-        file.close()
-        num_files += 1
-        current_index = current_index + 1
-
-    # Once inverted index is complete, compute document weights using the appropriate weighting scheme
-    if doc_weighting_scheme == "tfidf":
-        computeDocWeightsTFIDF(inverted_index, num_files)
-    elif doc_weighting_scheme == "bwpw":
-        computeDocWeightsBWPW(inverted_index, num_files)
-
-    pickle_out1 = open("inverted_index.pickle", "wb")
-    pickle.dump(inverted_index, pickle_out1)
-    pickle_out1.close()
-    pickle_out2 = open("doc_term_weightings.pickle", "wb")
-    pickle.dump(doc_term_weightings, pickle_out2)
-    pickle_out2.close()
-    pickle_out3 = open("index_to_movies.pickle", "wb")
-    pickle.dump(index_to_movies, pickle_out3)
-    pickle_out3.close()
-
-
 def get_metadata(synopsis_image_info, index_to_movies):
     """ Logging into our own profile """
 
@@ -376,11 +329,173 @@ def get_metadata(synopsis_image_info, index_to_movies):
     pickle.dump(index_to_movies, pickle_out2)
     pickle_out2.close()
 
+def create_data(doc_weighting_scheme, inverted_index, num_files, synopsis_image_info, index_to_movies, use_kaggle=False):
+    current_index = 0
+
+    #get_metadata(synopsis_image_info, index_to_movies)
+    global driver
+
+    options = Options()
+
+    chromedriver = "/Users/Vinchenzo4335/PycharmProjects/EECS486/Final_Project/chromedriver"
+    os.environ["webdriver.chrome.driver"] = chromedriver
+    # chrome_options.add_argument("--headless")
+    options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+
+    #  Code to disable notifications pop up of Chrome Browser
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--mute-audio")
+    # options.add_argument("headless")
+
+    driver = webdriver.Chrome(executable_path=chromedriver, options=options)
+    num_found = 0
+    movie_num = 0
+    pickle_tags = open("movie_attributes.pickle", "rb")
+    movie_attributes = pickle.load(pickle_tags)
+
+    for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
+        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
+
+        if filename == ".DS_Store":
+            continue
+
+        index1 = 7
+        index2 = filename.find(".")
+        movie_title = filename[index1:index2]
+
+        if "_" in movie_title:
+            movie_title = movie_title.replace("_", ":")
+
+        if ", The" in movie_title:
+            index = movie_title.find(", The")
+            movie_title = "The " + movie_title[0: index]
+
+        if ", A" in movie_title:
+            index = movie_title.find(", a")
+            movie_title = "A " + movie_title[0: index]
+
+
+        print(movie_title + ", Index: " + str(current_index))
+
+        index_to_movies[current_index] = movie_title
+        script = file.read()
+        movieID = current_index
+        movie_title = movie_title.lower()
+
+        if movie_title in movie_attributes:
+            for tag in movie_attributes[movie_title]:
+                script = script + tag
+
+        movie_title = movie_title.replace(" ", "_")
+
+        if ":" in movie_title:
+            movie_title = movie_title.replace(":", "")
+
+        if "'" in movie_title:
+            movie_title = movie_title.replace("'", "")
+
+        if "-" in movie_title:
+            movie_title = movie_title.replace("-", "")
+
+        if "&" in movie_title:
+            movie_title = movie_title.replace("&", "and")
+
+        if "__" in movie_title:
+            movie_title = movie_title.replace("__", "_")
+
+        if movie_title == "frozen_(disney)":
+            movie_title = "frozen_2013"
+
+        elif movie_title == "the_avengers_(2012)":
+            movie_title = "marvels_the_avengers"
+
+        elif movie_title == "star_wars_the_phantom_menace":
+            movie_title = "star_wars_episode_i_the_phantom_menace"
+
+        elif movie_title == "star_wars_attack_of_the_clones":
+            movie_title  = "star_wars_episode_ii_attack_of_the_clones"
+
+        elif movie_title == "star_wars_revenge_of_the_sith":
+            movie_title  = "star_wars_episode_iii_revenge_of_the_sith"
+
+        elif movie_title == "star_wars_a_new_hope":
+            movie_title  = "star_wars"
+
+        elif movie_title == "star_wars_the_empire_strikes_back":
+            movie_title  = "empire_strikes_back"
+
+        elif movie_title == "star_wars_return_of_the_jedi":
+            movie_title  = "star_wars_episode_vi_return_of_the_jedi"
+
+        elif movie_title == "star_wars_the_force_awakens":
+            movie_title  = "star_wars_episode_vii_the_force_awakens"
+
+
+        try:
+            driver.get("https://www.rottentomatoes.com/m/" + movie_title)
+            synopsis = driver.find_element_by_id('movieSynopsis').text
+            url = driver.find_element_by_class_name('posterImage').get_attribute('src')
+
+            if url is None:
+                url = "No image available."
+
+            synopsis_image_info[movieID] = (synopsis, url)
+            script = script + synopsis
+
+            num_found += 1
+        except:
+            if movie_title[0:4] == "the_":
+                try:
+                    movie_title = movie_title[4: len(movie_title)]
+                    driver.get("https://www.rottentomatoes.com/m/" + movie_title)
+                    synopsis = driver.find_element_by_id('movieSynopsis').text
+                    url = driver.find_element_by_class_name('posterImage').get_attribute('src')
+
+                    if url is None:
+                        url = "Image not found."
+
+                    script = script + synopsis
+                    synopsis_image_info[movieID] = (synopsis, url)
+                    num_found += 1
+                except:
+                    synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
+                    print(str(movie_num) + " " + movie_title + " NOT FOUND")
+            else:
+                synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
+                print(str(movie_num) + " " + movie_title + " NOT FOUND")
+
+        movie_num += 1
+
+        indexDocument(script, doc_weighting_scheme, inverted_index, movieID, use_kaggle)  # Update the inverted index
+        file.close()
+        num_files += 1
+        current_index = current_index + 1
+
+    # Once inverted index is complete, compute document weights using the appropriate weighting scheme
+    if doc_weighting_scheme == "tfidf":
+        computeDocWeightsTFIDF(inverted_index, num_files)
+    elif doc_weighting_scheme == "bwpw":
+        computeDocWeightsBWPW(inverted_index, num_files)
+
+    pickle_out1 = open("inverted_index.pickle", "wb")
+    pickle.dump(inverted_index, pickle_out1)
+    pickle_out1.close()
+    pickle_out2 = open("doc_term_weightings.pickle", "wb")
+    pickle.dump(doc_term_weightings, pickle_out2)
+    pickle_out2.close()
+    pickle_out3 = open("index_to_movies.pickle", "wb")
+    pickle.dump(index_to_movies, pickle_out3)
+    pickle_out3.close()
+
+
+
+
 if __name__ == '__main__':
 
     queries = "Posts.txt"
-    create_index = False
-    read_in_synopsis_info = False
+    create_index = True
+    read_in_synopsis_info = True
     use_kaggle = False
 
     index_to_movies = dict()
@@ -391,7 +506,7 @@ if __name__ == '__main__':
     num_files = 0
 
     if create_index:
-        create_data(doc_weighting_scheme, inverted_index, num_files, use_kaggle)
+        create_data(doc_weighting_scheme, inverted_index, num_files, synopsis_image_info, index_to_movies, use_kaggle)
 
     else:
         pickle_in = open("inverted_index.pickle", "rb")
@@ -401,6 +516,7 @@ if __name__ == '__main__':
         pickle_in = open("index_to_movies.pickle", "rb")
         index_to_movies = pickle.load(pickle_in)
 
+    '''
     if read_in_synopsis_info:
         get_metadata(synopsis_image_info, index_to_movies)
 
@@ -408,6 +524,7 @@ if __name__ == '__main__':
         pickle_in = open("synopsis_image_info.pickle", "rb")
         synopsis_image_info = pickle.load(pickle_in)
 
+    '''
 
     t0 = time.time()
     query_weighting_scheme = "tfidf"
