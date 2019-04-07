@@ -118,10 +118,10 @@ def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
         query_length += elt * elt
     query_length = math.sqrt(query_length)
 
+    t0 = time.time()
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
     docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query, query_length)
     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
-    t0 = time.time()
     print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")  # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
 
