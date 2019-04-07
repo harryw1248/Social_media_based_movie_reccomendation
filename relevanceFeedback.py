@@ -88,6 +88,47 @@ def optimalQuery(doc_term_weightings, Cr, notCr):
     for elt in range(len(leftSide)):
         final_result[elt] = leftSide[elt] - rightSide[elt]
     return final_result
+def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
+
+    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+    for Dj in Dr:
+        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+    leftSide = [x * 1.0 / len(Dr) for x in sumAllDj]
+    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+
+    for Dj in notDr:
+        sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
+    rightSide = [x * 1.0/len(notDr) for x in sumNotRelevant]
+
+    finalVec = [0.0] * len(doc_term_weightings[0].weights)
+    for x in range(len(leftSide)):
+        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
+    return finalVec
+
+def kendallTau(vectorOne, vectorTwo):
+    tupVecOne = []
+    for iter in range(len(vectorOne)):
+        for iter2 in range(iter+1, len(vectorOne)):
+            tup = (vectorOne[iter],) + (vectorOne[iter2],)
+            tupVecOne.append(tup)
+    tupVecTwo = []
+    for iter in range(len(vectorTwo)):
+        for iter2 in range(iter+1, len(vectorTwo)):
+            tup = (vectorTwo[iter],) + (vectorTwo[iter2],)
+            tupVecTwo.append(tup)
+    x = 0.0
+    y = 0.0
+
+    for elt in tupVecOne:
+
+        if elt in tupVecTwo:
+            x = x + 1.0
+        else:
+            y = y + 1.0
+
+    return (x - y )/(x + y)
+
+
 
 
 def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
@@ -145,4 +186,10 @@ def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
 if __name__ == '__main__':
     Cr = [3, 6, 87, 9]
     notCr = [234, 644, 99, 433, 233, 67]
-    createNewRecommendations(Cr, notCr)
+    #createNewRecommendations(Cr, notCr)
+    #NOTE Passes Test Cases
+    #p = [1,2,3,4,5]
+    #a = [3,4,5,1,2]
+    #b = [4,1,2,3,5]
+    #print(kendallTau(p,b))
+
