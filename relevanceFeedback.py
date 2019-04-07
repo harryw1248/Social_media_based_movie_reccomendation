@@ -132,16 +132,14 @@ def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
     for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
         movie_title = index_to_movies[movieID]
 
-        out_file.write(str(rank) + ". " + movie_title + " " + str(score) + '\n')
-        print(str(rank) + ". " + movie_title + " " + str(score) + '\n')
+        out_file.write(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
+        print(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
         print(synopsis_image_info[movieID][0] + '\n')
         out_file.write(synopsis_image_info[movieID][0] + '\n')
 
         rank += 1
         if rank == 11:
             break
-
-    out_file.close()
 
 
 if __name__ == '__main__':
