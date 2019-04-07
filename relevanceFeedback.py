@@ -1,6 +1,9 @@
 import pickle
 import math
 import collections
+import time
+import os
+
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -35,11 +38,11 @@ def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_leng
         dot_product += doc_weights[index] * query_weights[index]
 
     # Final value is the dot product divided by the product of document and query lengths
-    return dot_product/(doc_length * query_length)
+    return dot_product / (doc_length * query_length)
 
 
 # Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length):
+def calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query_weights, query_length):
     docs_with_at_least_one_matching_query_term = set()
     docs_with_scores = dict()
 
@@ -52,68 +55,77 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
     # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
     for movieID in docs_with_at_least_one_matching_query_term:
         docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                            doc_term_weightings[movieID].doc_length, query_length)
+                                                              doc_term_weightings[movieID].doc_length, query_length)
 
     return docs_with_scores
 
 
 def sumVector(v1, v2):
-    finalResult = [0.0]*len(v1)
+    finalResult = [0.0] * len(v1)
     for elt in range(0, len(v1)):
         finalResult[elt] = v1[elt] + v2[elt]
 
     return finalResult
 
-def optimalQuery(Cr, notCr):
-    inverted_index = dict()
-    doc_term_weightings = dict()
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
-    pickle_in = open("doc_term_weightings.pickle", "rb")
-    #Dict of Movie ID to Document Weight Vectors[Vector of Doubles]
-    doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
 
-    #relevant set of documents (list of Ints containing movieID
-    #Total Number of docs in collection:
+def optimalQuery(doc_term_weightings, Cr, notCr):
+    # relevant set of documents (list of Ints containing movieID
+    # Total Number of docs in collection:
     N = 10
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
     for Dj in Cr:
-        #Dj is already a weight, if not I will modify Dj to be a weight
+        # Dj is already a weight, if not I will modify Dj to be a weight
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
-    leftSide = [x * 1.0/len(Cr) for x in sumAllDj]
+    leftSide = [x * 1.0 / len(Cr) for x in sumAllDj]
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
     for Dj in notCr:
         # Dj is already a weight, if not I will modify Dj to be a weight
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
 
-    rightSide = [x * 1.0/(N - len(Cr)) for x in sumNotRelevant]
+    rightSide = [x * 1.0 / (N - len(Cr)) for x in sumNotRelevant]
 
     final_result = [0.0] * len(leftSide)
     for elt in range(len(leftSide)):
         final_result[elt] = leftSide[elt] - rightSide[elt]
     return final_result
 
-def createNewRecommendations(Cr, notCr):
 
-    query = optimalQuery(Cr, notCr)
+def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
+    inverted_index = dict()
+    synopsis_image_info = dict()
+    index_to_movies = dict()
     query_appearances = collections.Counter()  # Initialize counter to hold appearances of each query term
-    query_appearances = list()
+    doc_term_weightings = dict()
+
+    pickle_in = open("doc_term_weightings.pickle", "rb")
+    # Dict of Movie ID to Document Weight Vectors[Vector of Doubles]
+    doc_term_weightings = pickle.load(pickle_in)
+    pickle_in = open("inverted_index.pickle", "rb")
+    inverted_index = pickle.load(pickle_in)
+    pickle_in = open("index_to_movies.pickle", "rb")
+    index_to_movies = pickle.load(pickle_in)
     pickle_in = open("query_appearances.pickle", "rb")
     query_appearances = pickle.load(pickle_in)
-    
+    pickle_in = open("synopsis_image_info.pickle", "rb")
+    synopsis_image_info = pickle.load(pickle_in)
+    pickle_in = open("query_weights.pickle", "rb")
+    original_query_weights = pickle.load(pickle_in)
+
+    query = optimalQuery(doc_term_weightings, list_of_relevant, list_of_nonrelevant)
+
     query_length = 0.0
     for elt in query:
         query_length += elt * elt
     query_length = math.sqrt(query_length)
 
+    t0 = time.time()
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    docs_with_scores = calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
+    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query, query_length)
     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
-
     print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")  # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
+
+    out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
     out_file.write("Your Top 10 Movie Recommendations:\n")
 
     rank = 1
@@ -130,12 +142,9 @@ def createNewRecommendations(Cr, notCr):
             break
 
     out_file.close()
-    query_doc.close()
 
 
 if __name__ == '__main__':
     Cr = [3, 6, 87, 9]
     notCr = [234, 644, 99, 433, 233, 67]
     createNewRecommendations(Cr, notCr)
-
-
