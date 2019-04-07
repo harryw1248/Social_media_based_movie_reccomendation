@@ -171,6 +171,13 @@ def retrieveDocuments(query, inverted_index):
     # Use query weighting scheme to appropriately calculate query term weights
     query_length = calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index)
 
+    pickle_out1 = open("query_appearances.pickle", "wb")
+    pickle.dump(query_appearances, pickle_out1)
+    pickle_out1.close()
+    pickle_out2 = open("query_weights.pickle", "wb")
+    pickle.dump(query_weights, pickle_out2)
+    pickle_out2.close()
+
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
     return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
 
@@ -356,6 +363,8 @@ if __name__ == '__main__':
         doc_term_weightings = pickle.load(pickle_in)
         pickle_in = open("index_to_movies.pickle", "rb")
         index_to_movies = pickle.load(pickle_in)
+        pickle_in = open("synopsis_image_info.pickle", "rb")
+        synopsis_image_info = pickle.load(pickle_in)
 
     t0 = time.time()
     print("Searching for your recommended movies...\n")
@@ -367,7 +376,7 @@ if __name__ == '__main__':
     docs_with_scores = retrieveDocuments(line, inverted_index)
     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
 
-    print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")    # Print computation time
+    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
     out_file.write("Your Top 10 Movie Recommendations:\n")
 
