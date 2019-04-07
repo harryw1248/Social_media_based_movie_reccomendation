@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+.form-style-6{
+    font: 95% Arial, Helvetica, sans-serif;
+	display: block;
+    margin-left: 35%;
+    margin-right: auto;
+    width: 400px;
+    position: absolute;
+    top: 35%;
+    padding: 16px;
+	border-radius: 15px; 
+    background: #F7F7F7;
+}
+.form-style-6 h1{
+    background: #43D1AF;
+    padding: 20px 0;
+    font-size: 140%;
+    font-weight: 300;
+    text-align: center;
+    color: #fff;
+    margin: -16px -16px 16px -16px;
+}
+.form-style-6 input[type="text"],
+.form-style-6 input[type="date"],
+.form-style-6 input[type="datetime"],
+.form-style-6 input[type="email"],
+.form-style-6 input[type="number"],
+.form-style-6 input[type="search"],
+.form-style-6 input[type="time"],
+.form-style-6 input[type="url"],
+.form-style-6 textarea,
+.form-style-6 select
+{
+    -webkit-transition: all 0.30s ease-in-out;
+    -moz-transition: all 0.30s ease-in-out;
+    -ms-transition: all 0.30s ease-in-out;
+    -o-transition: all 0.30s ease-in-out;
+    outline: none;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    width: 100%;
+    background: #fff;
+    margin-bottom: 4%;
+    border: 1px solid #ccc;
+    padding: 3%;
+    color: #555;
+    font: 95% Arial, Helvetica, sans-serif;
+}
+.form-style-6 input[type="text"]:focus,
+.form-style-6 input[type="date"]:focus,
+.form-style-6 input[type="datetime"]:focus,
+.form-style-6 input[type="email"]:focus,
+.form-style-6 input[type="number"]:focus,
+.form-style-6 input[type="search"]:focus,
+.form-style-6 input[type="time"]:focus,
+.form-style-6 input[type="url"]:focus,
+.form-style-6 textarea:focus,
+.form-style-6 select:focus
+{
+    box-shadow: 0 0 5px #43D1AF;
+    padding: 3%;
+    border: 1px solid #43D1AF;
+}
+
+.form-style-6 input[type="submit"],
+.form-style-6 input[type="button"]{
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    width: 100%;
+    padding: 3%;
+    background: #43D1AF;
+    border-bottom: 2px solid #30C29E;
+	border-top: 2px solid #30C29E;
+    border-top-style: none;
+    border-right-style: none;
+    border-left-style: none;   
+    color: #fff;
+}
+.form-style-6 input[type="submit"]:hover,
+.form-style-6 input[type="button"]:hover{
+    background: #2EBC99;
+}
+body{
+background:LightGray;
+}
+</style>
+  <head>
+    <title>Moviesss!</title>
+  </head>
+  <body>
+  </body>
+</html>
+
+
+<!DOCTYPE html>
+<html>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='home_style.css') }}" />
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='animate.min.css') }}" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <head> <title> Movie Reccomendations </title> </head>
+    <body style = "background:LightGray;">
+        <div class="sform animated " style = "position: center; background:LightSteelBlue;">
+          <center>
+            <h1 style = "margin-left: -52px; margin-top:-10px; display: inline-block; margin-right: 22px; color:white; font-size:34px;">Moviesss</h1> <i id="icon" class="fa fa-book" style="text-shadow: 0px 0px rgb(123,137,155), 1px 1px rgb(130,145,164), 2px 2px rgb(136,152,172), 3px 3px rgb(143,159,180), 4px 4px rgb(150,167,189), 5px 5px rgb(156,174,197), 6px 6px rgb(163,181,205), 7px 7px rgb(169,189,214); font-size: 26px; color: rgb(255, 255, 255); line-height: 80px; background-color: rgb(176, 196, 222);"></i>
+         
+    <div class="form-style-6">
+    <form action='/scrape' method="POST">
+      <input type="text" name="fb_profile" placeholder="Link to Facebook Profile">
+      <input type="submit" style="background: LightSteelBlue; border-color: LightSteelBlue;" name="" value="Get Recommendations">
+    </form>
+     </center>
+  </div>
+</div>
+    </body>
+</html>
+
+
