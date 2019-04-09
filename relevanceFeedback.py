@@ -3,7 +3,7 @@ import math
 import collections
 import time
 import os
-
+import sys
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -73,11 +73,14 @@ def optimalQuery(doc_term_weightings, Cr, notCr):
     # Total Number of docs in collection:
     N = 10
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+
     for Dj in Cr:
         # Dj is already a weight, if not I will modify Dj to be a weight
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+
     leftSide = [x * 1.0 / len(Cr) for x in sumAllDj]
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+
     for Dj in notCr:
         # Dj is already a weight, if not I will modify Dj to be a weight
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
@@ -85,27 +88,39 @@ def optimalQuery(doc_term_weightings, Cr, notCr):
     rightSide = [x * 1.0 / (N - len(Cr)) for x in sumNotRelevant]
 
     final_result = [0.0] * len(leftSide)
+
     for elt in range(len(leftSide)):
         final_result[elt] = leftSide[elt] - rightSide[elt]
+
     return final_result
+
+
 def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
 
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+
     for Dj in Dr:
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+
     leftSide = [x * 1.0 / len(Dr) for x in sumAllDj]
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in notDr:
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
-    rightSide = [x * 1.0/len(notDr) for x in sumNotRelevant]
 
+    rightSide = [x * 1.0/len(notDr) for x in sumNotRelevant]
     finalVec = [0.0] * len(doc_term_weightings[0].weights)
+
     for x in range(len(leftSide)):
         finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
+
     return finalVec
 
+
 def kendallTau(vectorOne, vectorTwo):
+    pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
+    kendall_tau_data = pickle.load(pickle_in_kendall_tau)
+
     tupVecOne = []
     for iter in range(len(vectorOne)):
         for iter2 in range(iter+1, len(vectorOne)):
@@ -126,42 +141,23 @@ def kendallTau(vectorOne, vectorTwo):
         else:
             y = y + 1.0
 
-    return (x - y )/(x + y)
+    result = (x - y)/(x + y)
+    kendall_tau_data.append(result)
+    pickle_out_kendall_tau = open("kendall_tau_data.pickle", "wb")
+    pickle.dump(kendall_tau_data, pickle_out_kendall_tau)
+    print("Kendall Tau Value: " + str(result))
 
 
-
-
-def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
-    inverted_index = dict()
-    synopsis_image_info = dict()
-    index_to_movies = dict()
-    query_appearances = collections.Counter()  # Initialize counter to hold appearances of each query term
-    doc_term_weightings = dict()
-
-    pickle_in = open("doc_term_weightings.pickle", "rb")
-    # Dict of Movie ID to Document Weight Vectors[Vector of Doubles]
-    doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
-    pickle_in = open("query_appearances.pickle", "rb")
-    query_appearances = pickle.load(pickle_in)
-    pickle_in = open("synopsis_image_info.pickle", "rb")
-    synopsis_image_info = pickle.load(pickle_in)
-    pickle_in = open("query_weights.pickle", "rb")
-    original_query_weights = pickle.load(pickle_in)
-
-    query = optimalQuery(doc_term_weightings, list_of_relevant, list_of_nonrelevant)
-
+def createNewRecommendations(query_weights, doc_term_weightings, query_appearances,
+                             inverted_index, synopsis_image_info, index_to_movies):
     query_length = 0.0
-    for elt in query:
+    for elt in query_weights:
         query_length += elt * elt
     query_length = math.sqrt(query_length)
 
     t0 = time.time()
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query, query_length)
+    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query_weights, query_length)
     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
     print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")  # Print computation time
     print("Your Top 10 Movie Recommendations:\n")
@@ -184,12 +180,36 @@ def createNewRecommendations(list_of_relevant, list_of_nonrelevant):
 
 
 if __name__ == '__main__':
-    Cr = [3, 6, 87, 9]
-    notCr = [234, 644, 99, 433, 233, 67]
-    #createNewRecommendations(Cr, notCr)
-    #NOTE Passes Test Cases
-    #p = [1,2,3,4,5]
-    #a = [3,4,5,1,2]
-    #b = [4,1,2,3,5]
-    #print(kendallTau(p,b))
+    method_to_use = sys.argv[1]
+    pickle_in_Cr = open("relevant.pickle", "rb")
+    Cr = pickle.load(pickle_in_Cr)
+    pickle_in_notCr = open("not_relevant.pickle", "rb")
+    notCr = pickle.load(pickle_in_notCr)
 
+    pickle_in = open("doc_term_weightings.pickle", "rb")
+    doc_term_weightings = pickle.load(pickle_in)
+    pickle_in = open("inverted_index.pickle", "rb")
+    inverted_index = pickle.load(pickle_in)
+    pickle_in = open("index_to_movies.pickle", "rb")
+    index_to_movies = pickle.load(pickle_in)
+    pickle_in = open("query_appearances.pickle", "rb")
+    query_appearances = pickle.load(pickle_in)
+    pickle_in = open("synopsis_image_info.pickle", "rb")
+    synopsis_image_info = pickle.load(pickle_in)
+    pickle_in = open("query_weights.pickle", "rb")
+    query_weights = pickle.load(pickle_in)
+
+    if method_to_use == "Rocchio":
+        new_query_weights = rocchioModel(query_weights, doc_term_weightings, Cr, notCr)
+    else:
+        new_query_weights = optimalQuery(doc_term_weightings, Cr, notCr)
+
+    pickle_in_original_ranking = open("original_ranking.pickle", "rb")
+    origianl_ranking = pickle.load(pickle_in_original_ranking)
+    pickle_in_user_ranking = open("user_ranking.pickle", "rb")
+    user_ranking = pickle.load(pickle_in_user_ranking)
+
+    createNewRecommendations(new_query_weights, doc_term_weightings, query_appearances,
+                             inverted_index, synopsis_image_info, index_to_movies)
+
+    kendallTau(origianl_ranking, user_ranking)
