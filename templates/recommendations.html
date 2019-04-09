@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='rec_style.css') }}" />
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='animate.min.css') }}" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <head>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+     <title> Movie Recommendations </title> 
+   </head>
+    <body style = "background:LightGray;">
+    <script language="JavaScript">
+      $(document).ready(function() {
+        $(window).keydown(function(event){
+          if(event.keyCode == 13) {
+            event.preventDefault();
+            return false;
+          }
+        });
+      });
+      function feedbackMovie(movie_number, button) {
+        var scorePatt = /^([1-9]|10)$/;
+        var score = document.getElementById(`score_${movie_number}`);
+        if (scorePatt.test(score.value)) {
+          var feedback = document.getElementById(`feedback_${movie_number}`);
+          $(feedback).fadeOut("slow");
+          var thanks = document.getElementById(`thanks_${movie_number}`);
+          $(thanks).fadeIn("slow");
+        } else {
+          score.style.borderBottomColor = "red";
+          $(score).addClass('error-input');
+        }
+        document.querySelectorAll(`form[name="feedback"] input[name=movie_${movie_number}]`)[button].checked = true;
+      }
+    </script>
+    <form name="feedback" action="/feedback" method="post">
+                <input class="fab animated bounceInDown" type="submit" value="Submit Feedback" />
+            <div class="page animated slideInUp" style="">
+                <h3>Your Recommendations</h3>
+            <h2>
+                {% for story in stories %}
+                    <div class="card">
+                    <center style="margin-top:10px;">{{story[0]}}</center>
+                            <div>
+                             <p style="font-weight: normal; float:left; width:85%;">Synopsis: {{story[1]}}
+                                
+                             </p>
+                             <img style="width: 10%;margin-left: 1%;" src=/static/images/{{story[2]}}>
+                            </div>
+                           <p id="thanks_{{loop.index}}" style="font-size: 20px; display: inline; display:none; "> Thanks for the feedback ! </p>
+                          <div id="feedback_{{loop.index}}" style="margin-left:auto; margin-right:0">
+                            <p style="font-weight: normal; display: inline; "> Feedback: </p>
+                            <input id="score_{{loop.index}}" type="text" name="update" style="padding: 8px; width:15%; " placeholder="Score (1-10)" /> 
+                            <input style="display: none;" name="movie_{{loop.index}}" type="radio" value="relevant"></input>
+                            <input style="display: none;" name="movie_{{loop.index}}" type="radio" value="irrelevant"></input>
+                            <button type="button" class="btn" onClick="feedbackMovie('{{loop.index}}', 0)"><span>Relevant</span></button>
+                            <button  type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{loop.index}}', 1)"><span>Not Relevant</span></button>
+                           
+                          </div>
+
+                    </div>
+       
+                    
+                {% endfor %}
+
+        </div>
+        <div class="sform animated " style = "background:LightSteelBlue;">
+            <h1 style = "margin-top:-10px; text-align: left; color:white; font-size:34px;">Moviesss</h1> <i id="icon" class="icon-fa-book fa fa-book" style="float:left;margin-top:-80px;margin-left:132px;text-shadow: 0px 0px rgb(123,137,155), 1px 1px rgb(130,145,164), 2px 2px rgb(136,152,172), 3px 3px rgb(143,159,180), 4px 4px rgb(150,167,189), 5px 5px rgb(156,174,197), 6px 6px rgb(163,181,205), 7px 7px rgb(169,189,214); font-size: 26px; color: rgb(255, 255, 255); height: 80px; width: 80px; line-height: 80px; border-radius: ; text-align: center; background-color: rgb(176, 196, 222);"></i>
+            <div style="position: relative; bottom: 0;">
+            <div style = "margin-top:380px;">
+               <button type="button" onClick="window.location.href='/'"> Return to Home </button>
+            </div>
+            <br>
+            <input type="submit" value="Submit Feedback" />
+            <br>
+            <div style="color:white;">Viewing profile of {{user}} </div>
+          </div>
+    </form>
+    </body>
+</html>

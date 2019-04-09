@@ -1,0 +1,171 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+@import url('https://fonts.googleapis.com/css?family=Itim');
+@import url('https://fonts.googleapis.com/css?family=Poppins');
+@import url('https://fonts.googleapis.com/css?family=Permanent+Marker');
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+.page{
+ margin-left:310px;
+ padding:70px; 
+ padding-left:30px; 
+ padding-top: 10px;
+ font-size: 15px;
+ font-family: 'Poppins', sans-serif;
+}
+
+.card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    border-radius: 5px; 
+    width: 80%;
+    
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 5px;
+    margin: 10px;
+    
+    margin-left: 10%;
+    background: #FFFFFF;
+    color: #5c5c5c;
+}
+
+.card p{
+	color: black;
+	font-family: "Roboto", sans-serif;
+	font-size: 14px;
+}
+
+.card input {
+  margin: 40px 25px;
+  width: 40%;
+  display: inline;
+  border: none;
+  padding: 10px 0;
+  border-bottom: solid 1px  #1abc9c;
+  transition: all 0.3s cubic-bezier(.64,.09,.08,1);
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 96%,  #1abc9c 4%);
+  background-position: -200px 0;
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+  color: darken( #1abc9c, 20%);
+}
+
+.btn {
+  width: 10%;
+  display: inline-block;
+  margin: 0px;
+  padding: 0;
+  overflow: hidden;
+  border-width: 0;
+  outline: none;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+  background-color: #2ecc71;
+  color: #ecf0f1;
+  transition: background-color .3s;
+}
+.btn:hover, .btn:focus {
+  background-color: #27ae60;
+}
+.btn span {
+  display: block;
+  padding: 12px 24px;
+}
+
+.scrolling{
+ z-index: 10; position: fixed; width: 220px;
+}
+.sform {
+  z-index: 10; 
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  background: #FFFFFF;
+  //margin: auto;
+  padding: 45px;
+  //padding-top:10px;
+  text-align: center;
+  height:100vh;
+  box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.3), 0 10px 10px 0 rgba(0, 0, 0, 0.3);
+}
+.sform input {
+  font-family: "Roboto", sans-serif;
+  outline: 0;
+  background: #f2f2f2;
+  width: 200px;
+  border: 0;
+  margin: 0 0 15px;
+  padding: 15px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.sform button {
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: 0;
+  background: SteelBlue;
+  width: 200px;
+  border: 0;
+  padding: 15px;
+  margin-bottom: 10px;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+}
+
+.fab {
+	animation-delay:1.9s;
+    width: 100%;
+	display: inline-block;
+    height:100px;
+    position: fixed;
+    bottom:30px;;
+    right:35px;
+	border:none;
+    font-size:16px;
+    color:white;
+    background-color:SteelBlue;
+    border-radius: 8%;
+    width: 300px;
+    height: 60px;
+    z-index: 100;
+    -webkit-box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .4);
+       -moz-box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .4);
+            box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .4);
+}
+
+.fab:hover {
+    background-color: #6c9dc6;
+}
+
+.sform button:hover,.form button:active,.form button:focus {
+}
+
+h1 {
+  font-size: 34px;
+  color: LightSteelBlue;
+  font-family: 'Itim', cursive;
+}
+
+h2 {
+  font-size: 34px;
+  font-family: 'Permanent Marker';
+}
+
+.page h3 {
+  font-size: 60px;
+  font-family: 'Montserrat', sans-serif;
+  color: white;
+  text-align: center;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  color: SteelBlue;
+  background: LightSteelBlue;     
+}
