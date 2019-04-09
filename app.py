@@ -1,9 +1,33 @@
 from flask import Flask, render_template, request, session, url_for, redirect
-import os
-import inverted_index
-import scraper
+import os, pickle
+import inverted_index as recommender
+import fb_scraper
 
 app = Flask(__name__)
+
+
+# Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
+class PostingList:
+
+    def __init__(self):
+        self.posting_list = list()
+        self.length = 1
+        self.max_tf = 0.0
+
+
+# For each element in a posting list, the document ID and the corresponding term frequency are stored
+class PostingData:
+
+    def __init__(self, movieID_in, tf_in):
+        self.movieID = movieID_in
+        self.tf = tf_in
+
+
+# When the dictionary of document weights is created, each document maps to a vector of weights and its document length
+class SimilarityData:
+    def __init__(self, vocab_size):
+        self.doc_length = 0
+        self.weights = [0] * vocab_size
 
 @app.route('/')
 def homepage():
@@ -14,8 +38,8 @@ def scrape_profiles():
     profile = request.form['fb_profile'].split("/")[-1]
     #twitter_profile = request.form['twitter_profile']
     session['profile'] = profile
-    if not os.path.isdir("Data/"+profile):
-        scraper.run_scraper(profile) #("https://www.facebook.com/anthony.liang8P")
+    if not os.path.isdir("data/"+profile):
+        fb_scraper.run_scraper(profile) #("https://www.facebook.com/anthony.liang8P")
     return redirect(url_for('recommendations'))
 
 @app.route('/feedback', methods=['GET', 'POST'])
@@ -25,10 +49,10 @@ def post_feedback():
 
 @app.route('/recommendations')
 def recommendations():
+    global weightings, query, inverted_index, index_to_movies, synopsis
     profile = session['profile']
     if profile is None: return redirect(url_for('homepage'))
-    movies = inverted_index.generate_recommendations(profile)
-    #movies = [['Avengers', 'Adrift in space with no food or water, Tony Stark sends a message to Pepper Potts as his oxygen supply starts to dwindle. Meanwhile, the remaining Avengers -- Thor, Black Widow, Captain America and Bruce Banner -- must figure out a way to bring back their vanquished allies for an epic showdown with Thanos -- the evil demigod who decimated the planet and the universe.', 'avengers.jpg'] for i in range(5)]
+    movies = recommender.generate_recommendations(profile)
     return render_template('recommendations.html', user=profile, stories=movies)
 
 if __name__ == '__main__':

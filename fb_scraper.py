@@ -33,7 +33,7 @@ def scrape(profile):
     scroll()
     data = driver.find_elements_by_xpath('//div[@class="_5pcb _4b0l _2q8l"]')
 
-    with open('posts.txt', "w") as f:
+    with open("data/"+profile+'/fb_posts.txt', "w") as f:
       for x in data:
           try:
               status = x.find_element_by_xpath(".//div[@class='_5wj-']").text
@@ -77,4 +77,4 @@ def run_scraper(profile):
     scrape(profile)
     driver.close()
 
-run_scraper('shadman.habib.12')
+# run_scraper('shadman.habib.12')

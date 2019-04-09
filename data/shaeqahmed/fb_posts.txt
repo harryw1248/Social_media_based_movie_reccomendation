@@ -1,0 +1,6 @@
+attack
+hide 
+run
+sit
+jump
+coming

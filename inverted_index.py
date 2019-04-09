@@ -343,57 +343,73 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
     pickle.dump(index_to_movies, pickle_out3)
     pickle_out3.close()
 
+def generate_recommendations(profile):
+    global doc_term_weightings
+    pickle_in = open("inverted_index.pickle", "rb")
+    inverted_index = pickle.load(pickle_in)
+    pickle_in = open("index_to_movies.pickle", "rb")
+    index_to_movies = pickle.load(pickle_in)
+    pickle_in = open("synopsis_image_info.pickle", "rb")
+    synopsis = pickle.load(pickle_in)
+    pickle_in = open("doc_term_weightings.pickle", "rb")
+    doc_term_weightings = pickle.load(pickle_in)
+    query = open("data/"+profile+"/fb_posts.txt").read()
 
-if __name__ == '__main__':
-
-    queries, create_index, doc_folder = sys.argv[1], sys.argv[2], sys.argv[3]
-
-    index_to_movies = dict()
-    synopsis_image_info = dict()
-    inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
-    num_files = 0
-
-    if create_index == "create_index":
-        create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
-
-    else:
-        pickle_in = open("inverted_index.pickle", "rb")
-        inverted_index = pickle.load(pickle_in)
-        pickle_in = open("doc_term_weightings.pickle", "rb")
-        doc_term_weightings = pickle.load(pickle_in)
-        pickle_in = open("index_to_movies.pickle", "rb")
-        index_to_movies = pickle.load(pickle_in)
-        pickle_in = open("synopsis_image_info.pickle", "rb")
-        synopsis_image_info = pickle.load(pickle_in)
-
-    t0 = time.time()
-    print("Searching for your recommended movies...\n")
-
-    query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
-    out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
-    line = query_doc.read()
-
-    docs_with_scores = retrieveDocuments(line, inverted_index)
-    ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
-
-    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
-    print("Your Top 10 Movie Recommendations:\n")
-    out_file.write("Your Top 10 Movie Recommendations:\n")
-
-    rank = 1
-    for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-        movie_title = index_to_movies[movieID]
-
-        out_file.write(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-        print(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-        print(synopsis_image_info[movieID][0] + '\n')
-        out_file.write(synopsis_image_info[movieID][0] + '\n')
-
-        rank += 1
-        if rank == 11:
-            break
-
-    out_file.close()
-    query_doc.close()
+    recs = retrieveDocuments(query, inverted_index)
+    recs = sorted(recs.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
+    recs = [(index_to_movies[movieID], synopsis[movieID][0], "avengers.jpg", movieID) for movieID, score in recs]
+    #import pdb; pdb.set_trace()
+    return recs
 
 
+# if __name__ == '__main__':
+
+#     queries, create_index, doc_folder = sys.argv[1], sys.argv[2], sys.argv[3]
+
+#     index_to_movies = dict()
+#     synopsis_image_info = dict()
+#     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
+#     num_files = 0
+
+#     if create_index == "create_index":
+#         create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
+
+#     else:
+#         pickle_in = open("inverted_index.pickle", "rb")
+#         inverted_index = pickle.load(pickle_in)
+#         pickle_in = open("doc_term_weightings.pickle", "rb")
+#         doc_term_weightings = pickle.load(pickle_in)
+#         pickle_in = open("index_to_movies.pickle", "rb")
+#         index_to_movies = pickle.load(pickle_in)
+#         pickle_in = open("synopsis_image_info.pickle", "rb")
+#         synopsis_image_info = pickle.load(pickle_in)
+
+#     t0 = time.time()
+#     print("Searching for your recommended movies...\n")
+
+#     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
+#     out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
+#     line = query_doc.read()
+
+#     docs_with_scores = retrieveDocuments(line, inverted_index)
+#     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
+
+#     print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
+#     print("Your Top 10 Movie Recommendations:\n")
+#     out_file.write("Your Top 10 Movie Recommendations:\n")
+
+#     rank = 1
+#     for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
+#         movie_title = index_to_movies[movieID]
+
+#         out_file.write(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
+#         print(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
+#         print(synopsis_image_info[movieID][0] + '\n')
+#         out_file.write(synopsis_image_info[movieID][0] + '\n')
+
+#         rank += 1
+#         if rank == 11:
+#             break
+
+#     out_file.close()
+#     query_doc.close()
