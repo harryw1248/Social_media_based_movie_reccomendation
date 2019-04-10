@@ -148,68 +148,37 @@ def kendallTau(vectorOne, vectorTwo):
     print("Kendall Tau Value: " + str(result))
 
 
-def createNewRecommendations(query_weights, doc_term_weightings, query_appearances,
-                             inverted_index, synopsis_image_info, index_to_movies):
-    query_length = 0.0
-    for elt in query_weights:
-        query_length += elt * elt
-    query_length = math.sqrt(query_length)
+def createNewRecommendations(original_generated_ranking, user_ranking, relevantIDs, nonrelevantIDs):
+    kendallTau(original_generated_ranking, user_ranking)
 
-    t0 = time.time()
-    # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query_weights, query_length)
-    ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
-    print("\nTotal time to make recommendation:" + str(time.time() - t0) + " seconds")  # Print computation time
-    print("Your Top 10 Movie Recommendations:\n")
-
-    out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
-    out_file.write("Your Top 10 Movie Recommendations:\n")
-
-    rank = 1
-    for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-        movie_title = index_to_movies[movieID]
-
-        out_file.write(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-        print(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-        print(synopsis_image_info[movieID][0] + '\n')
-        out_file.write(synopsis_image_info[movieID][0] + '\n')
-
-        rank += 1
-        if rank == 11:
-            break
-
-
-if __name__ == '__main__':
-    method_to_use = sys.argv[1]
-    pickle_in_Cr = open("relevant.pickle", "rb")
-    Cr = pickle.load(pickle_in_Cr)
-    pickle_in_notCr = open("not_relevant.pickle", "rb")
-    notCr = pickle.load(pickle_in_notCr)
-
-    pickle_in = open("doc_term_weightings.pickle", "rb")
-    doc_term_weightings = pickle.load(pickle_in)
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
-    pickle_in = open("query_appearances.pickle", "rb")
-    query_appearances = pickle.load(pickle_in)
-    pickle_in = open("synopsis_image_info.pickle", "rb")
-    synopsis_image_info = pickle.load(pickle_in)
+    pickle_in = open("doc_term_weightings.pickle", "rb")
+    doc_term_weightings = pickle.load(pickle_in)
     pickle_in = open("query_weights.pickle", "rb")
     query_weights = pickle.load(pickle_in)
 
     if method_to_use == "Rocchio":
-        new_query_weights = rocchioModel(query_weights, doc_term_weightings, Cr, notCr)
+        new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
     else:
-        new_query_weights = optimalQuery(doc_term_weightings, Cr, notCr)
+        new_query_weights = optimalQuery(doc_term_weightings, relevantIDs, nonrelevantIDs)
 
-    pickle_in_original_ranking = open("original_ranking.pickle", "rb")
-    origianl_ranking = pickle.load(pickle_in_original_ranking)
-    pickle_in_user_ranking = open("user_ranking.pickle", "rb")
-    user_ranking = pickle.load(pickle_in_user_ranking)
+    new_query_length = 0.0
+    for elt in new_query_weights:
+        new_query_length += elt * elt
+    new_query_length = math.sqrt(new_query_length)
 
-    createNewRecommendations(new_query_weights, doc_term_weightings, query_appearances,
-                             inverted_index, synopsis_image_info, index_to_movies)
+    t0 = time.time()
+    # After calculating query weights and length, returns ranked list of documents by calculating similarity
+    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index,
+                                                   new_query_weights, new_query_length)
 
-    kendallTau(origianl_ranking, user_ranking)
+    ranked_list = list()
+
+    for (movieID, score) in recs:
+        ranked_list.append(movieID)
+
+    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")  # Print computation time
+    return ranked_list
+
+

@@ -35,11 +35,6 @@ class SimilarityData:
         self.weights = [0] * vocab_size
 
 
-# Global variable that I use to store document term weightings so I could obey function signatures
-# Holds mapping of movieID to weights vector as well as length of document
-doc_term_weightings = dict()
-
-
 # Computes the document vector weights using weighting scheme #1: TF-IDF
 def computeDocWeightsTFIDF(inverted_index, num_files):
     # Intializes global variable holding document term weightings to SimilarityData() objects
@@ -101,8 +96,7 @@ def createInvertedIndex(inverted_index, movieID, tokens):
 
 
 # Calculates weights for query vector using tf-idf scheme
-def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index):
-    num_files = len(doc_term_weightings) + 0.0
+def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index, num_files):
     l = list(inverted_index.keys())
 
     # Iterate through each term in the query vector and assign nonzero weight if the term appears in inverted index
@@ -120,7 +114,7 @@ def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inve
 
 
 # Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length):
+def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length, doc_term_weightings):
     docs_with_at_least_one_matching_query_term = set()
     docs_with_scores = dict()
 
@@ -150,7 +144,7 @@ def indexDocument(document, inverted_index, movieID):
     createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
 
 
-def retrieveDocuments(query, inverted_index):
+def retrieveDocuments(query, inverted_index, doc_term_weightings):
     tokens = nltk.word_tokenize(query)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
@@ -168,8 +162,10 @@ def retrieveDocuments(query, inverted_index):
         query_appearances[query_token] += 1
     query_length = 0.0
 
+    num_files = len(doc_term_weightings) + 0.0
+
     # Use query weighting scheme to appropriately calculate query term weights
-    query_length = calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index)
+    query_length = calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index, num_files)
 
     pickle_out1 = open("query_appearances.pickle", "wb")
     pickle.dump(query_appearances, pickle_out1)
@@ -179,7 +175,8 @@ def retrieveDocuments(query, inverted_index):
     pickle_out2.close()
 
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    return calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length)
+    return calculateDocumentSimilarity(query_appearances, inverted_index,
+                                       query_weights, query_length, doc_term_weightings)
 
 
 def correct_title_exceptions(title):
@@ -344,72 +341,21 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
     pickle_out3.close()
 
 def generate_recommendations(profile):
-    global doc_term_weightings
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
-    pickle_in = open("synopsis_image_info.pickle", "rb")
-    synopsis = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
     query = open("data/"+profile+"/fb_posts.txt").read()
 
-    recs = retrieveDocuments(query, inverted_index)
-    recs = sorted(recs.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
-    recs = [(index_to_movies[movieID], synopsis[movieID][0], "avengers.jpg", movieID) for movieID, score in recs]
-    #import pdb; pdb.set_trace()
-    return recs
+    t0 = time.time()
+    print("Searching for your recommended movies...\n")
 
+    docs_with_scores = retrieveDocuments(query, inverted_index, doc_term_weightings)
+    recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
 
-# if __name__ == '__main__':
+    ranked_list = list()
+    for (movieID, score) in recs:
+        ranked_list.append(movieID)
 
-#     queries, create_index, doc_folder = sys.argv[1], sys.argv[2], sys.argv[3]
-
-#     index_to_movies = dict()
-#     synopsis_image_info = dict()
-#     inverted_index = collections.OrderedDict()  # Inverted index is ordered dictionary to allow for consistent indexing
-#     num_files = 0
-
-#     if create_index == "create_index":
-#         create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
-
-#     else:
-#         pickle_in = open("inverted_index.pickle", "rb")
-#         inverted_index = pickle.load(pickle_in)
-#         pickle_in = open("doc_term_weightings.pickle", "rb")
-#         doc_term_weightings = pickle.load(pickle_in)
-#         pickle_in = open("index_to_movies.pickle", "rb")
-#         index_to_movies = pickle.load(pickle_in)
-#         pickle_in = open("synopsis_image_info.pickle", "rb")
-#         synopsis_image_info = pickle.load(pickle_in)
-
-#     t0 = time.time()
-#     print("Searching for your recommended movies...\n")
-
-#     query_doc = open(os.getcwd() + "/" + queries, 'r')  # Open the file
-#     out_file = open(os.getcwd() + "/" + "recommendations.txt", 'w')
-#     line = query_doc.read()
-
-#     docs_with_scores = retrieveDocuments(line, inverted_index)
-#     ordered_list = sorted(docs_with_scores.items(), key=lambda x: x[1])  # Order the list
-
-#     print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
-#     print("Your Top 10 Movie Recommendations:\n")
-#     out_file.write("Your Top 10 Movie Recommendations:\n")
-
-#     rank = 1
-#     for (movieID, score) in reversed(ordered_list):  # Print each ranking member to the output file
-#         movie_title = index_to_movies[movieID]
-
-#         out_file.write(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-#         print(str(rank) + ". " + movie_title + " (Movie ID: " + str(movieID) + ") " + str(score) + '\n')
-#         print(synopsis_image_info[movieID][0] + '\n')
-#         out_file.write(synopsis_image_info[movieID][0] + '\n')
-
-#         rank += 1
-#         if rank == 11:
-#             break
-
-#     out_file.close()
-#     query_doc.close()
+    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
+    return ranked_list
