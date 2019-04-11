@@ -150,7 +150,7 @@ def kendallTau(vectorOne, vectorTwo):
 
 
 # movieIDs
-def createNewRecommendations(user_relevance_info, profile, method_to_use):
+def createNewRecommendations(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle_in = open("recs.pickle", "rb")
     recs = pickle.load(pickle_in)
 
@@ -180,7 +180,7 @@ def createNewRecommendations(user_relevance_info, profile, method_to_use):
     else:
         new_query_weights = optimalQuery(doc_term_weightings, relevantIDs, nonrelevantIDs)
 
-    pickle_out = open("query_weights.pickle", "wb")
+    pickle_out = open("data/"+profile+"/query_weights.pickle", "wb")
     pickle.dump(new_query_weights, pickle_out)
     pickle_out.close()
 
