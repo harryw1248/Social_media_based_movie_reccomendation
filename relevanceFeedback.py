@@ -4,6 +4,7 @@ import collections
 import time
 import os
 import sys
+from inverted_index import *
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -148,14 +149,30 @@ def kendallTau(vectorOne, vectorTwo):
     print("Kendall Tau Value: " + str(result))
 
 
-def createNewRecommendations(original_generated_ranking, user_ranking, relevantIDs, nonrelevantIDs):
+# movieIDs
+def createNewRecommendations(user_relevance_info, profile, method_to_use):
+    pickle_in = open("recs.pickle", "rb")
+    recs = pickle.load(pickle_in)
+
+    original_generated_ranking = [0] * 10
+    user_ranking = [0] * 10
+    relevantIDs = list()
+    nonrelevantIDs = list()
+
+    for elt in user_relevance_info:
+        movieID, original_ranking, new_ranking, relevance = elt[0], elt[1], elt[2], elt[3]
+        original_generated_ranking[original_ranking] = movieID
+        user_ranking[new_ranking] = movieID
+        if relevance:
+            relevantIDs.append(movieID)
+        else:
+            nonrelevantIDs.append(movieID)
+
     kendallTau(original_generated_ranking, user_ranking)
 
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("query_weights.pickle", "rb")
+    pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
     query_weights = pickle.load(pickle_in)
 
     if method_to_use == "Rocchio":
@@ -163,22 +180,7 @@ def createNewRecommendations(original_generated_ranking, user_ranking, relevantI
     else:
         new_query_weights = optimalQuery(doc_term_weightings, relevantIDs, nonrelevantIDs)
 
-    new_query_length = 0.0
-    for elt in new_query_weights:
-        new_query_length += elt * elt
-    new_query_length = math.sqrt(new_query_length)
-
-    t0 = time.time()
-    # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index,
-                                                   new_query_weights, new_query_length)
-
-    ranked_list = list()
-
-    for (movieID, score) in recs:
-        ranked_list.append(movieID)
-
-    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")  # Print computation time
-    return ranked_list
-
+    pickle_out = open("query_weights.pickle", "wb")
+    pickle.dump(new_query_weights, pickle_out)
+    pickle_out.close()
 
