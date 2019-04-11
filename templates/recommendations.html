@@ -29,10 +29,18 @@
           score.style.borderBottomColor = "red";
           $(score).addClass('error-input');
         }
-        document.querySelectorAll(`form[name="feedback"] input[name=movie_${movie_number}]`)[button].checked = true;
+        document.querySelectorAll(`form[name="feedback"] input[name=relevancy_movie_${movie_number}]`)[button].checked = true;
       }
+      $('#feedback').submit(function () {
+        $(this)
+            .find('input[name]')
+            .filter(function () {
+                return !this.value;
+            })
+            .prop('name', '');
+      });
     </script>
-    <form name="feedback" action="/feedback" method="post">
+    <form name="feedback" id="feedback" action="/feedback" method="post">
                 <input class="fab animated bounceInDown" type="submit" value="Submit Feedback" />
             <div class="page animated slideInUp" style="">
                 <h3>Your Recommendations</h3>
