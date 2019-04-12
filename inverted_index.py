@@ -177,7 +177,7 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
         os.path.exists("data/"+profile+"/query_weights.pickle"):
         query_appearances = collections.Counter()
         num_files = len(doc_term_weightings) + 0.0
-        (query_weights, query_length) = calculateQueryDataTFIDF(query, inverted_index, num_files)
+        (query_weights, query_length) = calculateQueryDataTFIDF(query, inverted_index, num_files, profile)
 
     else:
         pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
