@@ -152,21 +152,21 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
            for posting_data in inverted_index[query_term].posting_list:
                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
-   previous_queries = list()
-   if not os.path.exists("previous_queries.pickle"):
-       previous_queries_in = open("previous_queries.pickle", "wb")
-       previous_queries_in.close()
+   past_feedback = list()
+   if not os.path.exists("past_feedback.pickle"):
+       past_feedback_in = open("past_feedback.pickle", "wb")
+       past_feedback_in.close()
 
    else:
        try:
-           previous_queries_in = open("previous_queries.pickle", "rb")
-           previous_queries = pickle.load(previous_queries_in)
+           past_feedback_in = open("past_feedback.pickle", "rb")
+           past_feedback = pickle.load(past_feedback_in)
        except:
-           previous_queries = list()
+           past_feedback = list()
 
    #collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
-   if len(previous_queries):
-        relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, previous_queries)
+   if len(past_feedback):
+        relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, past_feedback)
    else:
        relevant_movie_ids = irrelevant_movie_ids = []
 
@@ -406,10 +406,6 @@ def generate_recommendations(profile):
 
     ranked_list = [(index_to_movies[movieID], synopsis[movieID][0],
                     synopsis[movieID][1], movieID, score) for movieID, score in recs]
-
-    pickle_out = open("recs.pickle", "wb")
-    pickle.dump(inverted_index, pickle_out)
-    pickle_out.close()
 
     print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
     return ranked_list
