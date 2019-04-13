@@ -150,7 +150,7 @@ def kendallTau(vectorOne, vectorTwo):
 
 
 # movieIDs
-def createNewRecommendations(user_relevance_info, profile, method_to_use="Rocchio"):
+def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle_in = open("recs.pickle", "rb")
     recs = pickle.load(pickle_in)
 
@@ -161,8 +161,8 @@ def createNewRecommendations(user_relevance_info, profile, method_to_use="Rocchi
 
     for elt in user_relevance_info:
         movieID, original_ranking, new_ranking, relevance = elt[0], elt[1], elt[2], elt[3]
-        original_generated_ranking[original_ranking] = movieID
-        user_ranking[new_ranking] = movieID
+        original_generated_ranking[original_ranking-1] = movieID
+        user_ranking[new_ranking-1] = movieID
         if relevance:
             relevantIDs.append(movieID)
         else:

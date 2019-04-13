@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import os, pickle
 import inverted_index as recommender
+from relevanceFeedback import submit_feedback
 import fb_scraper
 
 app = Flask(__name__)
-
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -29,6 +29,15 @@ class SimilarityData:
         self.doc_length = 0
         self.weights = [0] * vocab_size
 
+def parse_feedback(form):
+    res = list()
+    for i in range(1,11):
+        movieID = form['movieID_'+str(i)]
+        score = int(form['score_movie_'+str(i)])
+        relevancy = 1 if form['relevancy_movie_'+str(i)] == 'relevant' else 0
+        res.append((movieID, i, score, relevancy))
+    return res
+
 @app.route('/')
 def homepage():
     return render_template('homepage.html')
@@ -44,7 +53,9 @@ def scrape_profiles():
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def post_feedback():
-    print(request.form)
+    feedback = parse_feedback(request.form)
+    profile = session['profile']
+    submit_feedback(feedback, profile)
     return redirect(url_for('recommendations'))
 
 @app.route('/recommendations')

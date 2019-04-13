@@ -55,14 +55,15 @@
                              <img style="width: 10%;margin-left: 1%;" src=/static/images/{{story[2]}}>
                              <div style="clear:both;"></div>
                             </div>
-                           <p id="thanks_{{story[3]}}" style="font-size: 20px; display: inline; display:none; "> Thanks for the feedback ! </p>
-                          <div id="feedback_{{story[3]}}" style="margin-left:auto; margin-right:0">
+                           <p id="thanks_{{loop.index}}" style="font-size: 20px; display: inline; display:none; "> Thanks for the feedback ! </p>
+                          <div id="feedback_{{loop.index}}" style="margin-left:auto; margin-right:0">
                             <p style="font-weight: normal; display: inline; "> Feedback: </p>
-                            <input id="score_{{story[3]}}" type="text" name="score_movie_{{story[3]}}" style="padding: 8px; width:15%; " placeholder="Score (1-10)" /> 
-                            <input style="display: none;" name="relevancy_movie_{{story[3]}}" type="radio" value="relevant"></input>
-                            <input style="display: none;" name="relevancy_movie_{{story[3]}}" type="radio" value="irrelevant"></input>
-                            <button type="button" class="btn" onClick="feedbackMovie('{{story[3]}}', 0)"><span>Relevant</span></button>
-                            <button  type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{story[3]}}', 1)"><span>Not Relevant</span></button>
+                            <input style="display: none;" type="text" name="movieID_{{loop.index}}" value={{story[3]}} /> 
+                             <input id="score_{{loop.index}}" type="text" name="score_movie_{{loop.index}}" style="padding: 8px; width:15%; " placeholder="Score (1-10)" /> 
+                            <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="relevant"></input>
+                            <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="irrelevant"></input>
+                            <button type="button" class="btn" onClick="feedbackMovie('{{loop.index}}', 0)"><span>Relevant</span></button>
+                            <button  type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{loop.index}}', 1)"><span>Not Relevant</span></button>
                            
                           </div>
 
