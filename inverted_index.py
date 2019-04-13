@@ -5,6 +5,7 @@ import pickle
 import string
 import time
 import nltk
+from nltk.corpus import wordnet
 import os
 import sys
 from selenium import webdriver
@@ -101,6 +102,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     tokens = nltk.word_tokenize(query_string)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
+    query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x != "birthday" and x != "bday")]
     query_tokens = stemWords(query_tokens)
 
     for i in range(0, len(query_tokens)):

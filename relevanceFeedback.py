@@ -75,13 +75,19 @@ def ide_regular(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
     for Dj in Dr:
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
 
-    leftSide = [x * (beta) for x in sumAllDj]
+    leftSide = [0.0 for x in sumAllDj]
+    if len(Dr) != 0:
+        leftSide = [x * (beta) for x in sumAllDj]
+
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in notDr:
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
 
-    rightSide = [x * (gamma) for x in sumNotRelevant]
+    rightSide = [0.0 for x in sumNotRelevant]
+    if len(notDr) != 0:
+        rightSide = [x * (gamma) for x in sumNotRelevant]
+
     finalVec = [0.0] * len(doc_term_weightings[0].weights)
 
     queryVec = [x * (alpha) for x in queryVec]
@@ -114,21 +120,28 @@ def ide_dec_hi(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
     return finalVec
 
 
-def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
-
+def rocchioModel(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in Dr:
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
 
-    leftSide = [x * 1.0 / len(Dr) for x in sumAllDj]
+    leftSide = [0.0 for x in sumAllDj]
+    if len(Dr) != 0:
+        leftSide = [x * (beta) / len(Dr) for x in sumAllDj]
+
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in notDr:
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
 
-    rightSide = [x * 1.0/len(notDr) for x in sumNotRelevant]
+    rightSide = [0.0 for x in sumNotRelevant]
+    if len(notDr) != 0:
+        rightSide = [x * (gamma) / len(notDr) for x in sumNotRelevant]
+
     finalVec = [0.0] * len(doc_term_weightings[0].weights)
+
+    queryVec = [x * (alpha) for x in queryVec]
 
     for x in range(len(leftSide)):
         finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
@@ -137,19 +150,17 @@ def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
 
 
 def kendallTau(vectorOne, vectorTwo, profile):
-    kendall_tau_data = []
-    if os.path.exists("data/"+profile+"/kendall_tau_data.pickle"):
-        pickle_in_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "rb")
-        kendall_tau_data = pickle.load(pickle_in_kendall_tau)
+    pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
+    kendall_tau_data = pickle.load(pickle_in_kendall_tau)
 
     tupVecOne = []
     for iter in range(len(vectorOne)):
-        for iter2 in range(iter+1, len(vectorOne)):
+        for iter2 in range(iter + 1, len(vectorOne)):
             tup = (vectorOne[iter],) + (vectorOne[iter2],)
             tupVecOne.append(tup)
     tupVecTwo = []
     for iter in range(len(vectorTwo)):
-        for iter2 in range(iter+1, len(vectorTwo)):
+        for iter2 in range(iter + 1, len(vectorTwo)):
             tup = (vectorTwo[iter],) + (vectorTwo[iter2],)
             tupVecTwo.append(tup)
     x = 0.0
@@ -162,11 +173,94 @@ def kendallTau(vectorOne, vectorTwo, profile):
         else:
             y = y + 1.0
 
-    result = (x - y)/(x + y)
+    result = (x - y) / (x + y)
     kendall_tau_data.append(result)
-    pickle_out_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "wb")
+    pickle_out_kendall_tau = open("kendall_tau_data.pickle", "wb")
     pickle.dump(kendall_tau_data, pickle_out_kendall_tau)
     print("Kendall Tau Value: " + str(result))
+
+
+# MAP
+def mean_average_precision(documents):
+    mean_average_precisions = []
+
+    if os.path.exists("mean_average_precisions.pickle"):
+        mean_average_precisions = pickle.load(open("mean_average_precisions.pickle", "rb"))
+
+    num_relevant_docs = 0
+    running_total = 0
+    precision_scores = []
+
+    for doc in documents:
+        if doc == 1:
+            num_relevant_docs += 1
+
+        running_total += 1
+        precision = num_relevant_docs / running_total
+        precision_scores.append(precision)
+
+    mean_average_precision = 0
+    if num_relevant_docs != 0:
+        mean_average_precision = sum(precision_scores) / num_relevant_docs
+
+    mean_average_precisions.append(mean_average_precision)
+    pickle.dump(mean_average_precisions, open("mean_average_precisions.pickle", "wb"))
+
+    return mean_average_precision
+
+
+# R-precision
+def r_precision(documents):
+    r_precisions = []
+
+    if os.path.exists("r_precisions.pickle"):
+        mean_average_precisions = pickle.load(open("r_precisions.pickle", "rb"))
+
+    most_recent_relevant_doc = 0
+    running_total_documents = 0
+    total_documents_R = 0
+
+    for doc in documents:
+        running_total_documents += 1
+        if doc == 1:
+            most_recent_relevant_doc += 1
+            total_documents_R = running_total_documents
+
+    r_precision = 0
+    if most_recent_relevant_doc != 0:
+        r_precision = most_recent_relevant_doc / total_documents_R
+
+    r_precisions.append(r_precision)
+    pickle.dump(r_precisions, open("r_precisions.pickle", "wb"))
+
+    return r_precision
+
+
+# MRR
+def mean_reciprocal_rank(documents):
+    mean_reciprocal_ranks = []
+
+    if os.path.exists("mean_reciprocal_ranks.pickle"):
+        mean_average_precisions = pickle.load(open("mean_reciprocal_ranks.pickle", "rb"))
+
+    first_relevant_doc = 0
+    running_total_documents = 0
+
+    for doc in documents:
+        running_total_documents += 1
+
+        if doc == 1:
+            first_relevant_doc = running_total_documents
+            break
+
+    mean_reciprocal_rank = 0
+    if first_relevant_doc != 0:
+        mean_reciprocal_rank = 1.0 / first_relevant_doc
+
+    mean_reciprocal_ranks.append(mean_reciprocal_rank)
+    pickle.dump(mean_reciprocal_ranks, open("mean_reciprocal_ranks.pickle", "wb"))
+
+    return mean_reciprocal_rank
 
 
 # movieIDs
@@ -194,6 +288,15 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
 
     kendallTau(original_generated_ranking, user_ranking, profile)
 
+
+
+
+
+
+    mean_average_precision()
+    mean_reciprocal_rank()
+    r_precision()
+
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
     pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
@@ -201,7 +304,8 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     new_query_weights = list()
 
     if method_to_use == "Rocchio":
-        new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
+        new_query_weights = rocchioModel(alpha, beta, gamma, query_weights, doc_term_weightings,
+                                         relevantIDs, nonrelevantIDs)
     elif method_to_use == "IDE Dec Hi":
         new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings,
                                        relevantIDs, nonrelevantIDs)
