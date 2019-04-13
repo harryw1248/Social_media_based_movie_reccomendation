@@ -150,8 +150,11 @@ def rocchioModel(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
 
 
 def kendallTau(vectorOne, vectorTwo, profile):
-    pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
-    kendall_tau_data = pickle.load(pickle_in_kendall_tau)
+    kendall_tau_data = list()
+
+    if os.path.exists("kendall_tau_data.pickle"):
+        pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
+        kendall_tau_data = pickle.load(pickle_in_kendall_tau)
 
     tupVecOne = []
     for iter in range(len(vectorOne)):
@@ -184,8 +187,9 @@ def kendallTau(vectorOne, vectorTwo, profile):
 def mean_average_precision(documents):
     mean_average_precisions = []
 
-    if os.path.exists("mean_average_precisions.pickle"):
-        mean_average_precisions = pickle.load(open("mean_average_precisions.pickle", "rb"))
+    if os.path.exists("mean_average_precision_data.pickle"):
+        pickle_in_MAR = open("mean_average_precision_data.pickle", "rb")
+        mean_average_precisions = pickle.load(pickle_in_MAR)
 
     num_relevant_docs = 0
     running_total = 0
@@ -199,12 +203,13 @@ def mean_average_precision(documents):
         precision = num_relevant_docs / running_total
         precision_scores.append(precision)
 
-    mean_average_precision = 0
+    average_precision = 0
     if num_relevant_docs != 0:
-        mean_average_precision = sum(precision_scores) / num_relevant_docs
+        average_precision = sum(precision_scores) / num_relevant_docs
 
-    mean_average_precisions.append(mean_average_precision)
-    pickle.dump(mean_average_precisions, open("mean_average_precisions.pickle", "wb"))
+    mean_average_precisions.append(average_precision)
+    pickle.dump(mean_average_precisions, open("mean_average_precision_data.pickle", "wb"))
+    print("Mean Average Precision: " + str(average_precision))
 
     return mean_average_precision
 
@@ -213,8 +218,9 @@ def mean_average_precision(documents):
 def r_precision(documents):
     r_precisions = []
 
-    if os.path.exists("r_precisions.pickle"):
-        mean_average_precisions = pickle.load(open("r_precisions.pickle", "rb"))
+    if os.path.exists("r_precision_data.pickle"):
+        pickle_in_r_precision = open("r_precision_data.pickle", "rb")
+        r_precisions = pickle.load(pickle_in_r_precision)
 
     most_recent_relevant_doc = 0
     running_total_documents = 0
@@ -231,7 +237,8 @@ def r_precision(documents):
         r_precision = most_recent_relevant_doc / total_documents_R
 
     r_precisions.append(r_precision)
-    pickle.dump(r_precisions, open("r_precisions.pickle", "wb"))
+    pickle.dump(r_precisions, open("r_precision_data.pickle", "wb"))
+    print("R-Precision: " + str(r_precision))
 
     return r_precision
 
@@ -240,8 +247,9 @@ def r_precision(documents):
 def mean_reciprocal_rank(documents):
     mean_reciprocal_ranks = []
 
-    if os.path.exists("mean_reciprocal_ranks.pickle"):
-        mean_average_precisions = pickle.load(open("mean_reciprocal_ranks.pickle", "rb"))
+    if os.path.exists("mrr_data.pickle"):
+        pickle_in_mrr_data = open("mrr_data.pickle", "rb")
+        mean_reciprocal_ranks = pickle.load(pickle_in_mrr_data)
 
     first_relevant_doc = 0
     running_total_documents = 0
@@ -258,7 +266,8 @@ def mean_reciprocal_rank(documents):
         mean_reciprocal_rank = 1.0 / first_relevant_doc
 
     mean_reciprocal_ranks.append(mean_reciprocal_rank)
-    pickle.dump(mean_reciprocal_ranks, open("mean_reciprocal_ranks.pickle", "wb"))
+    pickle.dump(mean_reciprocal_ranks, open("mrr_data.pickle", "wb"))
+    print("Mean Reciprocal Rank: " + str(mean_reciprocal_rank))
 
     return mean_reciprocal_rank
 
@@ -276,32 +285,52 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     user_ranking = [0] * 10
     relevantIDs = list()
     nonrelevantIDs = list()
+    relevant_or_not_relevant = [0] * 10
+    index = 0
 
     for elt in user_relevance_info:
         movieID, original_ranking, new_ranking, relevance = elt[0], elt[1], elt[2], elt[3]
         original_generated_ranking[original_ranking-1] = movieID
-        user_ranking[new_ranking-1] = movieID
+        user_ranking[new_ranking - 1] = movieID
         if relevance:
             relevantIDs.append(movieID)
+            relevant_or_not_relevant[index] = 1
         else:
             nonrelevantIDs.append(movieID)
+            relevant_or_not_relevant[index] = 0
+
+        index += 1
+
+    print(relevant_or_not_relevant)
 
     kendallTau(original_generated_ranking, user_ranking, profile)
 
-
-
-
-
-
-    mean_average_precision()
-    mean_reciprocal_rank()
-    r_precision()
+    mean_average_precision(relevant_or_not_relevant)
+    mean_reciprocal_rank(relevant_or_not_relevant)
+    r_precision(relevant_or_not_relevant)
 
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
     pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
     query_weights = pickle.load(pickle_in)
     new_query_weights = list()
+
+    previous_queries = list()
+
+    if not os.path.exists("previous_queries.pickle"):
+        previous_queries_in = open("previous_queries.pickle", "wb")
+        previous_queries_in.close()
+    else:
+        try:
+            previous_queries_in = open("previous_queries.pickle", "rb")
+            previous_queries = pickle.load(previous_queries_in)
+        except:
+            previous_queries = []
+
+    previous_queries_out = open("previous_queries.pickle", "wb")
+    new_elt = (query_weights, relevantIDs, nonrelevantIDs)
+    previous_queries.append(new_elt)
+    pickle.dump(previous_queries, previous_queries_out)
 
     if method_to_use == "Rocchio":
         new_query_weights = rocchioModel(alpha, beta, gamma, query_weights, doc_term_weightings,

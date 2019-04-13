@@ -21,13 +21,14 @@ def find_nearest_neighbor(current_query, previous_queries):
     relevant_movie_ids = []
     irrelevant_movie_ids = []
     min_distance = np.inf
+
     for previous_query in previous_queries:
-        query = previous_queries[0]
+        query = previous_query[0]
         distance = euclidean_distance(current_query, query)
         if distance < min_distance:
             min_distance = distance
-            relevant_movie_ids = previous_queries[1]
-            irrelevant_movie_ids = previous_queries[2]
+            relevant_movie_ids = previous_query[1]
+            irrelevant_movie_ids = previous_query[2]
 
     return relevant_movie_ids, irrelevant_movie_ids
 

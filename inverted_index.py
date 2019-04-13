@@ -141,7 +141,8 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
 
 
 # Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(previous_queries, query_appearances, inverted_index, query_weights, query_length, doc_term_weightings, upvoting_factor=1.05, downvoting_factor=0.95):
+def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length, doc_term_weightings,
+                                upvoting_factor=1.05, downvoting_factor=0.95):
    docs_with_at_least_one_matching_query_term = set()
    docs_with_scores = dict()
 
@@ -151,8 +152,23 @@ def calculateDocumentSimilarity(previous_queries, query_appearances, inverted_in
            for posting_data in inverted_index[query_term].posting_list:
                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
+   previous_queries = list()
+   if not os.path.exists("previous_queries.pickle"):
+       previous_queries_in = open("previous_queries.pickle", "wb")
+       previous_queries_in.close()
+
+   else:
+       try:
+           previous_queries_in = open("previous_queries.pickle", "rb")
+           previous_queries = pickle.load(previous_queries_in)
+       except:
+           previous_queries = list()
+
    #collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
-   relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, previous_queries)
+   if len(previous_queries):
+        relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, previous_queries)
+   else:
+       relevant_movie_ids = irrelevant_movie_ids = []
 
    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
    for movieID in docs_with_at_least_one_matching_query_term:
@@ -378,8 +394,6 @@ def generate_recommendations(profile):
     pickle_in = open("synopsis_image_info.pickle", "rb")
     synopsis = pickle.load(pickle_in)
 
-    print(profile)
-
     query = open("data/"+profile+"/fb_posts.txt").read()
 
     t0 = time.time()
@@ -389,8 +403,6 @@ def generate_recommendations(profile):
     docs_with_scores = retrieveDocuments(profile, query, inverted_index, doc_term_weightings)
 
     recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
-
-    print(recs)
 
     ranked_list = [(index_to_movies[movieID], synopsis[movieID][0],
                     synopsis[movieID][1], movieID, score) for movieID, score in recs]
