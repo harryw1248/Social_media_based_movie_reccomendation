@@ -69,31 +69,49 @@ def sumVector(v1, v2):
     return finalResult
 
 
-def optimalQuery(doc_term_weightings, Cr, notCr):
-    # relevant set of documents (list of Ints containing movieID
-    # Total Number of docs in collection:
-    N = 10
+def ide_regular(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
 
-    for Dj in Cr:
-        # Dj is already a weight, if not I will modify Dj to be a weight
+    for Dj in Dr:
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
 
-    leftSide = [x * 1.0 / len(Cr) for x in sumAllDj]
+    leftSide = [x * (beta) for x in sumAllDj]
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
 
-    for Dj in notCr:
-        # Dj is already a weight, if not I will modify Dj to be a weight
+    for Dj in notDr:
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
 
-    rightSide = [x * 1.0 / (N - len(Cr)) for x in sumNotRelevant]
+    rightSide = [x * (gamma) for x in sumNotRelevant]
+    finalVec = [0.0] * len(doc_term_weightings[0].weights)
 
-    final_result = [0.0] * len(leftSide)
+    queryVec = [x * (alpha) for x in queryVec]
 
-    for elt in range(len(leftSide)):
-        final_result[elt] = leftSide[elt] - rightSide[elt]
+    for x in range(len(leftSide)):
+        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
 
-    return final_result
+    return finalVec
+
+
+def ide_dec_hi(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
+    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+
+    for Dj in Dr:
+        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+
+    leftSide = [x * (beta) for x in sumAllDj]
+    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+
+    sumNotRelevant = notDr[0]
+
+    rightSide = [x * (gamma) for x in sumNotRelevant]
+    finalVec = [0.0] * len(doc_term_weightings[0].weights)
+
+    queryVec = [x * (alpha) for x in queryVec]
+
+    for x in range(len(leftSide)):
+        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
+
+    return finalVec
 
 
 def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
@@ -156,6 +174,10 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle_in = open("recs.pickle", "rb")
     recs = pickle.load(pickle_in)
 
+    alpha = 1.0
+    beta = 1.0
+    gamma = 1.0
+
     original_generated_ranking = [0] * 10
     user_ranking = [0] * 10
     relevantIDs = list()
@@ -179,8 +201,11 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
 
     if method_to_use == "Rocchio":
         new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
-    else:
-        new_query_weights = optimalQuery(doc_term_weightings, relevantIDs, nonrelevantIDs)
+    elif method_to_use == "ide_dec_hi":
+        new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
+    elif method_to_use == "ide_regular":
+        new_query_weights = ide_regular(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs,
+                                       nonrelevantIDs)
 
     pickle_out = open("data/"+profile+"/query_weights.pickle", "wb")
     pickle.dump(new_query_weights, pickle_out)
