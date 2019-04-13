@@ -274,9 +274,6 @@ def mean_reciprocal_rank(documents):
 
 # movieIDs
 def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
-    pickle_in = open("recs.pickle", "rb")
-    recs = pickle.load(pickle_in)
-
     alpha = 1.0
     beta = 1.0
     gamma = 1.0
@@ -315,22 +312,22 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     query_weights = pickle.load(pickle_in)
     new_query_weights = list()
 
-    previous_queries = list()
+    past_feedback = list()
 
-    if not os.path.exists("previous_queries.pickle"):
-        previous_queries_in = open("previous_queries.pickle", "wb")
-        previous_queries_in.close()
+    if not os.path.exists("past_feedback.pickle"):
+        past_feedback_in = open("past_feedback.pickle", "wb")
+        past_feedback_in.close()
     else:
         try:
-            previous_queries_in = open("previous_queries.pickle", "rb")
-            previous_queries = pickle.load(previous_queries_in)
+            past_feedback_in = open("past_feedback.pickle", "rb")
+            past_feedback = pickle.load(past_feedback_in)
         except:
-            previous_queries = []
+            past_feedback = []
 
-    previous_queries_out = open("previous_queries.pickle", "wb")
+    past_feedback_out = open("past_feedback.pickle", "wb")
     new_elt = (query_weights, relevantIDs, nonrelevantIDs)
-    previous_queries.append(new_elt)
-    pickle.dump(previous_queries, previous_queries_out)
+    past_feedback.append(new_elt)
+    pickle.dump(past_feedback, past_feedback_out)
 
     if method_to_use == "Rocchio":
         new_query_weights = rocchioModel(alpha, beta, gamma, query_weights, doc_term_weightings,
