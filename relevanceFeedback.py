@@ -118,9 +118,11 @@ def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
     return finalVec
 
 
-def kendallTau(vectorOne, vectorTwo):
-    pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
-    kendall_tau_data = pickle.load(pickle_in_kendall_tau)
+def kendallTau(vectorOne, vectorTwo, profile):
+    kendall_tau_data = []
+    if os.path.exists("data/"+profile+"/kendall_tau_data.pickle"):
+        pickle_in_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "rb")
+        kendall_tau_data = pickle.load(pickle_in_kendall_tau)
 
     tupVecOne = []
     for iter in range(len(vectorOne)):
@@ -144,7 +146,7 @@ def kendallTau(vectorOne, vectorTwo):
 
     result = (x - y)/(x + y)
     kendall_tau_data.append(result)
-    pickle_out_kendall_tau = open("kendall_tau_data.pickle", "wb")
+    pickle_out_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "wb")
     pickle.dump(kendall_tau_data, pickle_out_kendall_tau)
     print("Kendall Tau Value: " + str(result))
 
@@ -168,7 +170,7 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
         else:
             nonrelevantIDs.append(movieID)
 
-    kendallTau(original_generated_ranking, user_ranking)
+    kendallTau(original_generated_ranking, user_ranking, profile)
 
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)

@@ -32,7 +32,7 @@ class SimilarityData:
 def parse_feedback(form):
     res = list()
     for i in range(1,11):
-        movieID = form['movieID_'+str(i)]
+        movieID = int(form['movieID_'+str(i)])
         score = int(form['score_movie_'+str(i)])
         relevancy = 1 if form['relevancy_movie_'+str(i)] == 'relevant' else 0
         res.append((movieID, i, score, relevancy))

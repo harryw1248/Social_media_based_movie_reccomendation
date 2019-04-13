@@ -134,7 +134,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     pickle.dump(query_weights, pickle_out2)
     pickle_out2.close()
 
-    return (query_weights, query_length)
+    return (query_weights, query_length, query_appearances)
 
 
 # Returns ordered ranking of retrieved documents
@@ -177,7 +177,7 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
         os.path.exists("data/"+profile+"/query_weights.pickle"):
         query_appearances = collections.Counter()
         num_files = len(doc_term_weightings) + 0.0
-        (query_weights, query_length) = calculateQueryDataTFIDF(query, inverted_index, num_files, profile)
+        (query_weights, query_length, query_appearances) = calculateQueryDataTFIDF(query, inverted_index, num_files, profile)
 
     else:
         pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
@@ -245,7 +245,6 @@ def correct_title_exceptions(title):
 
     return title
 
-
 def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies, doc_term_weightings):
     current_index = 0
     global driver
@@ -262,6 +261,34 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
     options.add_argument("--disable-infobars")
     options.add_argument("--mute-audio")
     # options.add_argument("headless")
+
+    driver = webdriver.Chrome(executable_path=chromedriver, options=options)
+    num_found = 0
+    movie_num = 0
+    pickle_tags = open("movie_attributes.pickle", "rb")
+    movie_attributes = pickle.load(pickle_tags)
+
+    doc_folder = ""
+
+    for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
+        file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
+
+        if filename == ".DS_Store":
+            continue
+
+        index1 = 7
+        index2 = filename.find(".")
+        movie_title = filename[index1:index2]
+
+        if "_" in movie_title:
+            movie_title = movie_title.replace("_", ":")
+
+        if ", The" in movie_title:
+            index = movie_title.find(", The")
+            movie_title = "The " + movie_title[0: index]
+
+        if ", A" in movie_title:
+            index = movie_title.find(", A")
             movie_title = "A " + movie_title[0: index]
 
         print(movie_title + ", Index: " + str(current_index))
@@ -339,13 +366,20 @@ def generate_recommendations(profile):
     index_to_movies = pickle.load(pickle_in)
     pickle_in = open("synopsis_image_info.pickle", "rb")
     synopsis = pickle.load(pickle_in)
+
+    print(profile)
+
     query = open("data/"+profile+"/fb_posts.txt").read()
 
     t0 = time.time()
+
     print("Searching for your recommended movies...\n")
 
     docs_with_scores = retrieveDocuments(profile, query, inverted_index, doc_term_weightings)
+
     recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
+
+    print(recs)
 
     ranked_list = [(index_to_movies[movieID], synopsis[movieID][0],
                     synopsis[movieID][1], movieID, score) for movieID, score in recs]
@@ -353,5 +387,6 @@ def generate_recommendations(profile):
     pickle_out = open("recs.pickle", "wb")
     pickle.dump(inverted_index, pickle_out)
     pickle_out.close()
+
     print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
     return ranked_list
