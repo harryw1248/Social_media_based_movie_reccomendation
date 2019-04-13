@@ -202,11 +202,12 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
 
     if method_to_use == "Rocchio":
         new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
-    elif method_to_use == "ide_dec_hi":
-        new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
-    elif method_to_use == "ide_regular":
-        new_query_weights = ide_regular(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs,
-                                       nonrelevantIDs)
+    elif method_to_use == "IDE Dec Hi":
+        new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings,
+                                       relevantIDs, nonrelevantIDs)
+    elif method_to_use == "IDE Regular":
+        new_query_weights = ide_regular(alpha, beta, gamma, query_weights, doc_term_weightings,
+                                        relevantIDs, nonrelevantIDs)
 
     pickle_out = open("data/"+profile+"/query_weights.pickle", "wb")
     pickle.dump(new_query_weights, pickle_out)
