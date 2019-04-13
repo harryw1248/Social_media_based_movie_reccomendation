@@ -4,7 +4,7 @@ import collections
 import time
 import os
 import sys
-
+from inverted_index import *
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -69,22 +69,48 @@ def sumVector(v1, v2):
     return finalResult
 
 
-def rocchioModel(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
+def optimalQuery(doc_term_weightings, Cr, notCr):
+    # relevant set of documents (list of Ints containing movieID
+    # Total Number of docs in collection:
+    N = 10
+    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+
+    for Dj in Cr:
+        # Dj is already a weight, if not I will modify Dj to be a weight
+        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+
+    leftSide = [x * 1.0 / len(Cr) for x in sumAllDj]
+    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+
+    for Dj in notCr:
+        # Dj is already a weight, if not I will modify Dj to be a weight
+        sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
+
+    rightSide = [x * 1.0 / (N - len(Cr)) for x in sumNotRelevant]
+
+    final_result = [0.0] * len(leftSide)
+
+    for elt in range(len(leftSide)):
+        final_result[elt] = leftSide[elt] - rightSide[elt]
+
+    return final_result
+
+
+def rocchioModel(queryVec, doc_term_weightings, Dr, notDr):
+
     sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in Dr:
         sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
 
-    leftSide = [x * (beta) / len(Dr) for x in sumAllDj]
+    leftSide = [x * 1.0 / len(Dr) for x in sumAllDj]
     sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
 
     for Dj in notDr:
         sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
 
-    rightSide = [x * (gamma) / len(notDr) for x in sumNotRelevant]
+    rightSide = [x * 1.0/len(notDr) for x in sumNotRelevant]
     finalVec = [0.0] * len(doc_term_weightings[0].weights)
-
-    queryVec = [x * (alpha) for x in queryVec]
 
     for x in range(len(leftSide)):
         finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
@@ -92,63 +118,20 @@ def rocchioModel(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
     return finalVec
 
 
-def ide_regular(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
-    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
-
-    for Dj in Dr:
-        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
-
-    leftSide = [x * (beta) for x in sumAllDj]
-    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
-
-    for Dj in notDr:
-        sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
-
-    rightSide = [x * (gamma) for x in sumNotRelevant]
-    finalVec = [0.0] * len(doc_term_weightings[0].weights)
-
-    queryVec = [x * (alpha) for x in queryVec]
-
-    for x in range(len(leftSide)):
-        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
-
-    return finalVec
-
-
-def ide_dec_hi(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
-    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
-
-    for Dj in Dr:
-        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
-
-    leftSide = [x * (beta) for x in sumAllDj]
-    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
-
-    sumNotRelevant = notDr[0]
-
-    rightSide = [x * (gamma) for x in sumNotRelevant]
-    finalVec = [0.0] * len(doc_term_weightings[0].weights)
-
-    queryVec = [x * (alpha) for x in queryVec]
-
-    for x in range(len(leftSide)):
-        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
-
-    return finalVec
-
-
-def kendallTau(vectorOne, vectorTwo):
-    pickle_in_kendall_tau = open("kendall_tau_data.pickle", "rb")
-    kendall_tau_data = pickle.load(pickle_in_kendall_tau)
+def kendallTau(vectorOne, vectorTwo, profile):
+    kendall_tau_data = []
+    if os.path.exists("data/"+profile+"/kendall_tau_data.pickle"):
+        pickle_in_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "rb")
+        kendall_tau_data = pickle.load(pickle_in_kendall_tau)
 
     tupVecOne = []
     for iter in range(len(vectorOne)):
-        for iter2 in range(iter + 1, len(vectorOne)):
+        for iter2 in range(iter+1, len(vectorOne)):
             tup = (vectorOne[iter],) + (vectorOne[iter2],)
             tupVecOne.append(tup)
     tupVecTwo = []
     for iter in range(len(vectorTwo)):
-        for iter2 in range(iter + 1, len(vectorTwo)):
+        for iter2 in range(iter+1, len(vectorTwo)):
             tup = (vectorTwo[iter],) + (vectorTwo[iter2],)
             tupVecTwo.append(tup)
     x = 0.0
@@ -161,53 +144,45 @@ def kendallTau(vectorOne, vectorTwo):
         else:
             y = y + 1.0
 
-    result = (x - y) / (x + y)
+    result = (x - y)/(x + y)
     kendall_tau_data.append(result)
-    pickle_out_kendall_tau = open("kendall_tau_data.pickle", "wb")
+    pickle_out_kendall_tau = open("data/"+profile+"/kendall_tau_data.pickle", "wb")
     pickle.dump(kendall_tau_data, pickle_out_kendall_tau)
     print("Kendall Tau Value: " + str(result))
 
 
-def createNewRecommendations(original_generated_ranking, user_ranking, relevantIDs, nonrelevantIDs):
-    kendallTau(original_generated_ranking, user_ranking)
+# movieIDs
+def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
+    pickle_in = open("recs.pickle", "rb")
+    recs = pickle.load(pickle_in)
 
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
+    original_generated_ranking = [0] * 10
+    user_ranking = [0] * 10
+    relevantIDs = list()
+    nonrelevantIDs = list()
+
+    for elt in user_relevance_info:
+        movieID, original_ranking, new_ranking, relevance = elt[0], elt[1], elt[2], elt[3]
+        original_generated_ranking[original_ranking-1] = movieID
+        user_ranking[new_ranking-1] = movieID
+        if relevance:
+            relevantIDs.append(movieID)
+        else:
+            nonrelevantIDs.append(movieID)
+
+    kendallTau(original_generated_ranking, user_ranking, profile)
+
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("query_weights.pickle", "rb")
+    pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
     query_weights = pickle.load(pickle_in)
 
-    alpha = 1.0
-    beta = 1.0
-    gamma = 1.0
-
     if method_to_use == "Rocchio":
-        new_query_weights = rocchioModel(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs,
-                                         nonrelevantIDs)
-    elif method_to_use == "Ide_Regular":
-        new_query_weights = ide_regular(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs,
-                                        nonrelevantIDs)
+        new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
     else:
-        new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings, relevantIDs,
-                                       nonrelevantIDs)
+        new_query_weights = optimalQuery(doc_term_weightings, relevantIDs, nonrelevantIDs)
 
-    new_query_length = 0.0
-    for elt in new_query_weights:
-        new_query_length += elt * elt
-    new_query_length = math.sqrt(new_query_length)
-
-    t0 = time.time()
-    # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    docs_with_scores = calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index,
-                                                   new_query_weights, new_query_length)
-
-    ranked_list = list()
-
-    for (movieID, score) in recs:
-        ranked_list.append(movieID)
-
-    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")  # Print computation time
-    return ranked_list
-
+    pickle_out = open("data/"+profile+"/query_weights.pickle", "wb")
+    pickle.dump(new_query_weights, pickle_out)
+    pickle_out.close()
 

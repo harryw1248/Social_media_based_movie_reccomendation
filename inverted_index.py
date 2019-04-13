@@ -9,7 +9,7 @@ import os
 import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-import collaborative_filtering as cf
+from relevanceFeedback import *
 
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
@@ -37,18 +37,18 @@ class SimilarityData:
 
 
 # Computes the document vector weights using weighting scheme #1: TF-IDF
-def computeDocWeightsTFIDF(inverted_index, num_files):
+def computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings):
     # Intializes global variable holding document term weightings to SimilarityData() objects
     for movieID in range(0, num_files + 1):
         doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
 
     index = 0
-    for term in inverted_index:  # Iterates through each term in the inverted index
+    for term in inverted_index: # Iterates through each term in the inverted index
         for posting_data in inverted_index[term].posting_list:  # Iterates through each document in each posting list
-            tf = posting_data.tf  # tf is frequency of term in a document
+            tf = posting_data.tf                        # tf is frequency of term in a document
             num_postings = inverted_index[term].length  # num_postings is document frequency
             movieID = posting_data.movieID
-            if tf > 0.0:  # Only spend computational effort if term frequency is greater than zero
+            if tf > 0.0:    # Only spend computational effort if term frequency is greater than zero
                 # tf-idf = tf * idf
                 idf = math.log10(num_files / num_postings)
                 doc_term_weightings[movieID].weights[index] = tf * idf
@@ -57,7 +57,7 @@ def computeDocWeightsTFIDF(inverted_index, num_files):
                 continue
         index += 1  # Increment index to move to next term
 
-    for movieID in range(1, num_files + 1):  # Finish calculating doc lengths
+    for movieID in range(1, num_files + 1):   # Finish calculating doc lengths
         doc_term_weightings[movieID].doc_length = math.sqrt(doc_term_weightings[movieID].doc_length)
 
 
@@ -70,13 +70,13 @@ def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_leng
         dot_product += doc_weights[index] * query_weights[index]
 
     # Final value is the dot product divided by the product of document and query lengths
-    return dot_product / (doc_length * query_length)
+    return dot_product/(doc_length * query_length)
 
 
 # Creates the inverted index by initializing each term in the corpus
 def createInvertedIndex(inverted_index, movieID, tokens):
-    for token in tokens:  # Iterate through each token in the document
-        if token in inverted_index:  # If the token is already in the inverted index
+    for token in tokens:    # Iterate through each token in the document
+        if token in inverted_index: # If the token is already in the inverted index
             current_posting_list_length = inverted_index[token].length  # Calculate length of posting list so far
             # If the last entry in the posting list is the same document, just increment the term frequency
             if inverted_index[token].posting_list[current_posting_list_length - 1].movieID == movieID:
@@ -97,26 +97,48 @@ def createInvertedIndex(inverted_index, movieID, tokens):
 
 
 # Calculates weights for query vector using tf-idf scheme
-def calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index, num_files):
+def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
+    tokens = nltk.word_tokenize(query_string)
+    tokens = [x for x in tokens if x not in string.punctuation]
+    query_tokens = removeStopWords(tokens)  # Remove the stopwords
+    query_tokens = stemWords(query_tokens)
+
+    for i in range(0, len(query_tokens)):
+        query_tokens[i] = query_tokens[i].lower()
+
+    query_appearances = collections.Counter()
+    query_weights = [0] * len(inverted_index)  # Initialize vector to hold query weights
+    for query_token in query_tokens:
+        query_appearances[query_token] += 1
+    query_length = 0.0
+
     l = list(inverted_index.keys())
 
     # Iterate through each term in the query vector and assign nonzero weight if the term appears in inverted index
     for query_term in query_appearances:
         if query_term in inverted_index:
-            index_of_word = l.index(query_term)  # Since ordered dict, calculate index of term
-            num_postings = inverted_index[query_term].length + 0.0  # Document frequency
-            idf = math.log10(num_files / num_postings)  # Inverse document frequency
-            tf = query_appearances[query_term]  # Term frequency
-            query_weights[index_of_word] = tf * idf  # Query weight
-            query_length += (tf * idf) * (tf * idf)  # Update running total for query length
+            index_of_word = l.index(query_term)     # Since ordered dict, calculate index of term
+            num_postings = inverted_index[query_term].length + 0.0      # Document frequency
+            idf = math.log10(num_files / num_postings)                  # Inverse document frequency
+            tf = query_appearances[query_term]                          # Term frequency
+            query_weights[index_of_word] = tf * idf                     # Query weight
+            query_length += (tf * idf) * (tf * idf)                     # Update running total for query length
 
-    query_length = math.sqrt(query_length)  # Calculate final query length
-    return query_length
+    query_length = math.sqrt(query_length)                              # Calculate final query length
+
+    pickle_out = open("data/"+profile+"/query_appearances.pickle", "wb")
+    pickle.dump(query_appearances, pickle_out)
+    pickle_out.close()
+
+    pickle_out2 = open("data/" + profile + "/query_weights.pickle", "wb")
+    pickle.dump(query_weights, pickle_out2)
+    pickle_out2.close()
+
+    return (query_weights, query_length, query_appearances)
 
 
 # Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(previous_queries, query_appearances, inverted_index, query_weights, query_length,
-                                doc_term_weightings, upvoting_factor=1.05, downvoting_factor=0.95):
+def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length, doc_term_weightings):
     docs_with_at_least_one_matching_query_term = set()
     docs_with_scores = dict()
 
@@ -126,18 +148,10 @@ def calculateDocumentSimilarity(previous_queries, query_appearances, inverted_in
             for posting_data in inverted_index[query_term].posting_list:
                 docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
-    # collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
-    relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, previous_queries)
-
     # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
     for movieID in docs_with_at_least_one_matching_query_term:
         docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                              doc_term_weightings[movieID].doc_length, query_length)
-        if movieID in relevant_movie_ids:
-            docs_with_scores[movieID] *= upvoting_factor
-
-        if movieID in irrelevant_movie_ids:
-            docs_with_scores[movieID] *= downvoting_factor
+                                                            doc_term_weightings[movieID].doc_length, query_length)
 
     return docs_with_scores
 
@@ -146,50 +160,38 @@ def indexDocument(document, inverted_index, movieID):
     tokens = nltk.word_tokenize(document)
     tokens = [x for x in tokens if x not in string.punctuation]
     tokens = removeStopWords(tokens)  # Remove the stopwords
-    tokens = stemWords(tokens)  # PorterStemmer
+    tokens = stemWords(tokens)      # PorterStemmer
 
     for i in range(0, len(tokens)):
         tokens[i] = tokens[i].lower()
 
-    createInvertedIndex(inverted_index, movieID, tokens)  # Create the inverted index
+    createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
 
 
-def retrieveDocuments(query, inverted_index, doc_term_weightings):
-    tokens = nltk.word_tokenize(query)
-    tokens = [x for x in tokens if x not in string.punctuation]
-    query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    query_tokens = stemWords(query_tokens)
-
-    out_file_query = open("query_tokens.txt", 'w')
-
-    for i in range(0, len(query_tokens)):
-        query_tokens[i] = query_tokens[i].lower()
-        out_file_query.write(query_tokens[i] + '\n')
-
-    query_weights = [0] * len(inverted_index)  # Initialize vector to hold query weights
-    query_appearances = collections.Counter()  # Initialize counter to hold appearances of each query term
-    for query_token in query_tokens:
-        query_appearances[query_token] += 1
+def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
+    query_weights = list()
+    query_appearances = collections.Counter()
     query_length = 0.0
 
-    num_files = len(doc_term_weightings) + 0.0
+    if not os.path.exists("data/"+profile+"/query_appearances.pickle") and not\
+        os.path.exists("data/"+profile+"/query_weights.pickle"):
+        query_appearances = collections.Counter()
+        num_files = len(doc_term_weightings) + 0.0
+        (query_weights, query_length, query_appearances) = calculateQueryDataTFIDF(query, inverted_index, num_files, profile)
 
-    # Use query weighting scheme to appropriately calculate query term weights
-    query_length = calculateQueryDataTFIDF(query_weights, query_appearances, query_length, inverted_index, num_files)
+    else:
+        pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
+        query_weights = pickle.load(pickle_in)
+        pickle_in = open("data/"+profile+"/query_appearances.pickle", "rb")
+        query_appearances = pickle.load(pickle_in)
 
-    pickle_out1 = open("query_appearances.pickle", "wb")
-    pickle.dump(query_appearances, pickle_out1)
-    pickle_out1.close()
-    pickle_out2 = open("query_weights.pickle", "wb")
-    pickle.dump(query_weights, pickle_out2)
-    pickle_out2.close()
+        for elt in query_weights:
+            query_length += elt * elt
 
-    # load all previous queries and list of relevant and irrelevant movies
-    pickle_in = open("previous_queries.pickle", "rb")
-    previous_queries = pickle.load(pickle_in)
+        query_length= math.sqrt(query_length)
 
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    return calculateDocumentSimilarity(previous_queries, query_appearances, inverted_index,
+    return calculateDocumentSimilarity(query_appearances, inverted_index,
                                        query_weights, query_length, doc_term_weightings)
 
 
@@ -243,8 +245,7 @@ def correct_title_exceptions(title):
 
     return title
 
-
-def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies):
+def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies, doc_term_weightings):
     current_index = 0
     global driver
 
@@ -266,6 +267,8 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
     movie_num = 0
     pickle_tags = open("movie_attributes.pickle", "rb")
     movie_attributes = pickle.load(pickle_tags)
+
+    doc_folder = ""
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
@@ -342,7 +345,7 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
         current_index = current_index + 1
 
     # Once inverted index is complete, compute document weights using the appropriate weighting scheme
-    computeDocWeightsTFIDF(inverted_index, num_files)
+    computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings)
 
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
@@ -354,23 +357,36 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies)
     pickle.dump(index_to_movies, pickle_out3)
     pickle_out3.close()
 
-
 def generate_recommendations(profile):
     pickle_in = open("inverted_index.pickle", "rb")
     inverted_index = pickle.load(pickle_in)
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
-    query = open("data/" + profile + "/fb_posts.txt").read()
+    pickle_in = open("index_to_movies.pickle", "rb")
+    index_to_movies = pickle.load(pickle_in)
+    pickle_in = open("synopsis_image_info.pickle", "rb")
+    synopsis = pickle.load(pickle_in)
+
+    print(profile)
+
+    query = open("data/"+profile+"/fb_posts.txt").read()
 
     t0 = time.time()
+
     print("Searching for your recommended movies...\n")
 
-    docs_with_scores = retrieveDocuments(query, inverted_index, doc_term_weightings)
+    docs_with_scores = retrieveDocuments(profile, query, inverted_index, doc_term_weightings)
+
     recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
 
-    ranked_list = list()
-    for (movieID, score) in recs:
-        ranked_list.append(movieID)
+    print(recs)
 
-    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")  # Print computation time
+    ranked_list = [(index_to_movies[movieID], synopsis[movieID][0],
+                    synopsis[movieID][1], movieID, score) for movieID, score in recs]
+
+    pickle_out = open("recs.pickle", "wb")
+    pickle.dump(inverted_index, pickle_out)
+    pickle_out.close()
+
+    print("\nTotal time to make recommendation: " + str(time.time() - t0) + " seconds")    # Print computation time
     return ranked_list
