@@ -11,6 +11,7 @@ import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from relevanceFeedback import *
+import collaborative_filtering as cf
 
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
@@ -140,22 +141,30 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
 
 
 # Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length, doc_term_weightings):
-    docs_with_at_least_one_matching_query_term = set()
-    docs_with_scores = dict()
+def calculateDocumentSimilarity(previous_queries, query_appearances, inverted_index, query_weights, query_length, doc_term_weightings, upvoting_factor=1.05, downvoting_factor=0.95):
+   docs_with_at_least_one_matching_query_term = set()
+   docs_with_scores = dict()
 
-    # Use a set to hold every movieID in which at least one query term appears
-    for query_term in query_appearances:
-        if query_term in inverted_index:
-            for posting_data in inverted_index[query_term].posting_list:
-                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
+   # Use a set to hold every movieID in which at least one query term appears
+   for query_term in query_appearances:
+       if query_term in inverted_index:
+           for posting_data in inverted_index[query_term].posting_list:
+               docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
-    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
-    for movieID in docs_with_at_least_one_matching_query_term:
-        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                            doc_term_weightings[movieID].doc_length, query_length)
+   #collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
+   relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, previous_queries)
 
-    return docs_with_scores
+   # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
+   for movieID in docs_with_at_least_one_matching_query_term:
+       docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
+                                                           doc_term_weightings[movieID].doc_length, query_length)
+       if movieID in relevant_movie_ids:
+           docs_with_scores[movieID] *= upvoting_factor
+
+       if movieID in irrelevant_movie_ids:
+           docs_with_scores[movieID] *= downvoting_factor
+
+   return docs_with_scores
 
 
 def indexDocument(document, inverted_index, movieID):
