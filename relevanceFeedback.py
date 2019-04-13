@@ -198,6 +198,7 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     doc_term_weightings = pickle.load(pickle_in)
     pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
     query_weights = pickle.load(pickle_in)
+    new_query_weights = list()
 
     if method_to_use == "Rocchio":
         new_query_weights = rocchioModel(query_weights, doc_term_weightings, relevantIDs, nonrelevantIDs)
