@@ -278,16 +278,15 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
 
     options = Options()
 
-    chromedriver = "/Users/Vinchenzo4335/PycharmProjects/EECS486/Final_Project/chromedriver"
+    chromedriver = "./chromedriver"
     os.environ["webdriver.chrome.driver"] = chromedriver
-    # chrome_options.add_argument("--headless")
     options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
     #  Code to disable notifications pop up of Chrome Browser
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-infobars")
     options.add_argument("--mute-audio")
-    # options.add_argument("headless")
+    options.add_argument("headless")
 
     driver = webdriver.Chrome(executable_path=chromedriver, options=options)
     num_found = 0
@@ -394,7 +393,7 @@ def generate_recommendations(profile):
     pickle_in = open("synopsis_image_info.pickle", "rb")
     synopsis = pickle.load(pickle_in)
 
-    query = open("data/"+profile+"/fb_posts.txt").read()
+    query = open("data/"+profile+"/posts.txt").read()
 
     t0 = time.time()
 

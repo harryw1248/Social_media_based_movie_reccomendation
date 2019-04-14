@@ -17,28 +17,57 @@
           }
         });
       });
+
       function feedbackMovie(movie_number, button) {
         var scorePatt = /^([1-9]|10)$/;
         var score = document.getElementById(`score_${movie_number}`);
         if (scorePatt.test(score.value)) {
-          var feedback = document.getElementById(`feedback_${movie_number}`);
-          $(feedback).fadeOut("slow");
-          var thanks = document.getElementById(`thanks_${movie_number}`);
-          $(thanks).fadeIn("slow");
+          var isRel = $(`#btn_${movie_number}_0`);
+          var notIsRel = $(`#btn_${movie_number}_1`);
+          if (button) {
+            notIsRel.css("border-width", "1.5px");
+            notIsRel.css("opacity", "1");
+            isRel.css("border-width", "0px");
+            isRel.css("opacity", "0.5");
+          } else {
+            notIsRel.css("border-width", "0px");
+            notIsRel.css("opacity", "0.5");
+            isRel.css("border-width", "1.5px");
+            isRel.css("opacity", "1");
+          }
         } else {
           score.style.borderBottomColor = "red";
           $(score).addClass('error-input');
         }
         document.querySelectorAll(`form[name="feedback"] input[name=relevancy_movie_${movie_number}]`)[button].checked = true;
       }
-      $('#feedback').submit(function () {
-        $(this)
-            .find('input[name]')
-            .filter(function () {
-                return !this.value;
-            })
-            .prop('name', '');
-      });
+
+      // $('#feedback').on('submit', function (e) {
+      //   console.log("gee")
+      //   if ($('input[type=radio]:checked').length != 11) {
+      //     console.log("boom");
+      //     e.preventDefault();
+      //     return false;
+      //   } else {
+      //     console.log("done");
+      //     $(this)
+      //         .find('input[name]')
+      //         .filter(function () {
+      //             return !this.value;
+      //         })
+      //         .prop('name', '');
+      //   }
+      // });
+
+    function Feedback(){
+      if($('input[type=radio]:checked').length == 11){
+            document.getElementById('feedback').submit();
+            return(true);
+         } else {
+            return(false);
+         }
+    }
+
     </script>
     <form name="feedback" id="feedback" action="/feedback" method="post">
             <div class="page animated slideInUp" style="">
@@ -46,10 +75,9 @@
             <h2>
                 {% for story in stories %}
                     <div class="card">
-                    <center style="margin-top:10px;">{{story[0]}}</center>
+                    <center style="margin-top:10px;">{{loop.index}}.&nbsp;{{story[0]}}</center>
                             <div>
                              <p style="font-weight: normal; float:left; width:85%;">Synopsis: {{story[1]}}
-                                
                              </p>
                              <div style="clear:both;"></div>
                             </div>
@@ -57,11 +85,11 @@
                           <div id="feedback_{{loop.index}}" style="margin-left:auto; margin-right:0">
                             <p style="font-weight: normal; display: inline; "> Feedback: </p>
                             <input style="display: none;" type="text" name="movieID_{{loop.index}}" value={{story[3]}} /> 
-                             <input id="score_{{loop.index}}" type="text" name="score_movie_{{loop.index}}" style="padding: 8px; width:15%; " placeholder="Score (1-10)" value="{{11-loop.index}}" /> 
+                             <input id="score_{{loop.index}}" class="score" type="text" name="score_movie_{{loop.index}}" style="padding: 8px; width:15%; " placeholder="Rank (1-10)" value="{{11-loop.index}}" /> 
                             <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="relevant"></input>
                             <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="irrelevant"></input>
-                            <button type="button" class="btn" onClick="feedbackMovie('{{loop.index}}', 0)"><span>Relevant</span></button>
-                            <button  type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{loop.index}}', 1)"><span>Not Relevant</span></button>
+                            <button id="btn_{{loop.index}}_0" type="button" class="btn" onClick="feedbackMovie('{{loop.index}}', 0)"><span>Relevant</span></button>
+                            <button id="btn_{{loop.index}}_1" type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{loop.index}}', 1)"><span>Not Relevant</span></button>
                            
                           </div>
 
@@ -72,16 +100,17 @@
 
         </div>
         <div class="sform animated " style = "background:LightSteelBlue;">
-            <h1 style = "margin-top:-10px; text-align: left; color:white; font-size:34px;">Moviesss</h1> <i id="icon" class="icon-fa-book fa fa-book" style="float:left;margin-top:-80px;margin-left:132px;text-shadow: 0px 0px rgb(123,137,155), 1px 1px rgb(130,145,164), 2px 2px rgb(136,152,172), 3px 3px rgb(143,159,180), 4px 4px rgb(150,167,189), 5px 5px rgb(156,174,197), 6px 6px rgb(163,181,205), 7px 7px rgb(169,189,214); font-size: 26px; color: rgb(255, 255, 255); height: 80px; width: 80px; line-height: 80px; border-radius: ; text-align: center; background-color: rgb(176, 196, 222);"></i>
+            <h1 style = "margin-top:-10px; text-align: left; color:white; font-size:34px;">Movies</h1> <i id="icon" class="icon-fa-book fa fa-book" style="float:left;margin-top:-80px;margin-left:132px;text-shadow: 0px 0px rgb(123,137,155), 1px 1px rgb(130,145,164), 2px 2px rgb(136,152,172), 3px 3px rgb(143,159,180), 4px 4px rgb(150,167,189), 5px 5px rgb(156,174,197), 6px 6px rgb(163,181,205), 7px 7px rgb(169,189,214); font-size: 26px; color: rgb(255, 255, 255); height: 80px; width: 80px; line-height: 80px; border-radius: ; text-align: center; background-color: rgb(176, 196, 222);"></i>
             <div style="position: relative; bottom: 0;">
-            <div style = "margin-top:380px;">
+               (Courtney Cox) puts Ace on the case. However, Snowflake isn't the only Miami Dolphin who has gone missing; several key members of the team also disappear, including quarterback Dan Marino (who plays himself), who is spirited away while filming a TV commercial. With the Super Bowl only two weeks away,  (Courtney Cox) puts Ace on the case. However, Snowflake isn't the only Miami Dolphin who has gone missing; several key members of the team also disappear, including quarterback Dan Marino (who plays himself), who is spirited away while filming a TV commercial. With the Super Bowl only two weeks away, 
+            <div style = "margin-top:65px;">
                <button type="button" onClick="window.location.href='/'"> Return to Home </button>
             </div>
             <br>
             <input style="width: 13px; margin: 6px;" class="radio-b" name="model" type="radio" value="Rocchio"></input><label>Rocchio</label><br>
             <input style="width: 13px; margin: 6px;" class="radio-b" name="model" type="radio" value="IDE Regular"></input><label>IDE Regular</label><br>
             <input style="width: 13px; margin: 6px; margin-bottom: 24px;" class="radio-b" name="model" type="radio" value="IDE Dec Hi"></input><label>IDE Dec Hi</label><br>
-            <input type="submit" value="Submit Feedback" />
+            <input type="submit" value="Submit Feedback" onclick="JavaScript: return Feedback()"/>
             <br>
             <div style="color:white;">Viewing profile of {{user}} </div>
           </div>

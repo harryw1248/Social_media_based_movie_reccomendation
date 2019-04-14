@@ -59,6 +59,7 @@
   display: inline-block;
   margin: 0px;
   padding: 0;
+  border-color: black;
   overflow: hidden;
   border-width: 0;
   outline: none;
@@ -68,9 +69,11 @@
   color: #ecf0f1;
   transition: background-color .3s;
 }
-.btn:hover, .btn:focus {
+
+/*.btn:hover, .btn:focus {
   background-color: #27ae60;
-}
+}*/
+
 .btn span {
   display: block;
   padding: 12px 24px;

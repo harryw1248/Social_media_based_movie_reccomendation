@@ -1,10 +1,18 @@
 from flask import Flask, render_template, request, session, url_for, redirect
-import os, pickle
+import os, pickle, sys
 import inverted_index as recommender
 from relevanceFeedback import submit_feedback
-import fb_scraper
+import scraper
+import keyring
+import twitter_scraper
+
+# Run with: python3 app.py <path to /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome >
+# (also make sure correct chromedriver executable is present in repo)
 
 app = Flask(__name__)
+
+# the service is just a namespace for your app
+service_id = 'eecs486project'
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
@@ -44,11 +52,18 @@ def homepage():
 
 @app.route('/scrape', methods=['GET', 'POST'])
 def scrape_profiles():
+    login_email = request.form['username']
+    keyring.set_password(service_id, login_email, request.form['password'])
+
     profile = request.form['fb_profile'].split("/")[-1]
-    #twitter_profile = request.form['twitter_profile']
+    if request.form['twitter_profile']: # optional twitter link
+        twitter_profile = request.form['twitter_profile'].split("?")[0].split("/")[-1]
+    else:
+        twitter_profile = None
+
     session['profile'] = profile
     if not os.path.isdir("data/"+profile):
-        fb_scraper.run_scraper(profile) #("https://www.facebook.com/anthony.liang8P")
+        scraper.run_scraper(login_email, profile, twitter_profile, sys.argv[1])
     return redirect(url_for('recommendations'))
 
 @app.route('/feedback', methods=['GET', 'POST'])
@@ -67,6 +82,6 @@ def recommendations():
     return render_template('recommendations.html', user=profile, stories=movies)
 
 if __name__ == '__main__':
-    app.debug=True
+    #app.debug=True
     app.secret_key = 'V\xfc\xa5\x04\x8ac\xa9#SU\x02*\x990\x9d\xb9\x08\xe6\xb5\x8d\xb9\xd2\xbe\x93\x94\xf1\xf2W7\xd6"\x0b\xe5\xc3{\xc7{U\xf8\xf4\xbc\xdd\xe6\x01\xea\t\\|<\xce'
     app.run()
