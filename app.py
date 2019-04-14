@@ -4,7 +4,6 @@ import inverted_index as recommender
 from relevanceFeedback import submit_feedback
 import scraper
 import keyring
-import twitter_scraper
 
 # Run with: python3 app.py <path to /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome >
 # (also make sure correct chromedriver executable is present in repo)

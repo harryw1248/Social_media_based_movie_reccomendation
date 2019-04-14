@@ -5,7 +5,7 @@ import time
 import os
 import sys
 from inverted_index import *
-
+'''
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
 class PostingList:
 
@@ -60,8 +60,8 @@ def calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted
 
     return docs_with_scores
 
-
-def sumVector(v1, v2):
+'''
+def sum_vector(v1, v2):
     finalResult = [0.0] * len(v1)
     for elt in range(0, len(v1)):
         finalResult[elt] = v1[elt] + v2[elt]
@@ -69,87 +69,62 @@ def sumVector(v1, v2):
     return finalResult
 
 
-def ide_regular(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
-    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+def ide_regular(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
+    sum_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    sum_not_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    final_vec = [0.0] * len(doc_term_weightings[0].weights)
 
-    for Dj in Dr:
-        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+    for doc_j in Dr:
+        sum_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_relevant)
 
-    leftSide = [0.0 for x in sumAllDj]
-    if len(Dr) != 0:
-        leftSide = [x * (beta) for x in sumAllDj]
+    for doc_j in not_Dr:
+        sum_not_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_not_relevant)
 
-    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+    for index in range(0, len(query_vec)):
+        final_vec[index] = alpha * query_vec[index] + beta * sum_relevant[index] - gamma * sum_not_relevant[index]
 
-    for Dj in notDr:
-        sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
+    return final_vec
 
-    rightSide = [0.0 for x in sumNotRelevant]
-    if len(notDr) != 0:
-        rightSide = [x * (gamma) for x in sumNotRelevant]
+def ide_dec_hi(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
+    sum_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    sum_not_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    final_vec = [0.0] * len(doc_term_weightings[0].weights)
 
-    finalVec = [0.0] * len(doc_term_weightings[0].weights)
+    for doc_j in Dr:
+        sum_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_relevant)
 
-    queryVec = [x * (alpha) for x in queryVec]
+    if len(not_Dr):
+        index_of_most_non_relevant = not_Dr[len(not_Dr) - 1]
+        sum_not_relevant = doc_term_weightings[index_of_most_non_relevant].weights
 
-    for x in range(len(leftSide)):
-        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
+    for index in range(0, len(query_vec)):
+        final_vec[index] = alpha * query_vec[index] + beta * sum_relevant[index] - gamma * sum_not_relevant[index]
 
-    return finalVec
-
-
-def ide_dec_hi(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
-    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
-
-    for Dj in Dr:
-        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
-
-    leftSide = [x * (beta) for x in sumAllDj]
-    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
-
-    sumNotRelevant = notDr[0]
-
-    rightSide = [x * (gamma) for x in sumNotRelevant]
-    finalVec = [0.0] * len(doc_term_weightings[0].weights)
-
-    queryVec = [x * (alpha) for x in queryVec]
-
-    for x in range(len(leftSide)):
-        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
-
-    return finalVec
+    return final_vec
 
 
-def rocchioModel(alpha, beta, gamma, queryVec, doc_term_weightings, Dr, notDr):
-    sumAllDj = [0.0] * len(doc_term_weightings[0].weights)
+def rocchio(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
+    sum_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    sum_not_relevant = [0.0] * len(doc_term_weightings[0].weights)
+    final_vec = [0.0] * len(doc_term_weightings[0].weights)
 
-    for Dj in Dr:
-        sumAllDj = sumVector(doc_term_weightings[Dj].weights, sumAllDj)
+    if len(Dr):
+        for doc_j in Dr:
+            sum_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_relevant)
+        sum_relevant = [x/len(Dr) for x in sum_relevant]
 
-    leftSide = [0.0 for x in sumAllDj]
-    if len(Dr) != 0:
-        leftSide = [x * (beta) / len(Dr) for x in sumAllDj]
+    if len(not_Dr):
+        for doc_j in not_Dr:
+            sum_not_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_not_relevant)
+        sum_not_relevant = [x/len(not_Dr) for x in sum_not_relevant]
 
-    sumNotRelevant = [0.0] * len(doc_term_weightings[0].weights)
+    for index in range(0, len(query_vec)):
+        final_vec[index] = alpha * query_vec[index] + beta * sum_relevant[index] - gamma * sum_not_relevant[index]
 
-    for Dj in notDr:
-        sumNotRelevant = sumVector(doc_term_weightings[Dj].weights, sumNotRelevant)
-
-    rightSide = [0.0 for x in sumNotRelevant]
-    if len(notDr) != 0:
-        rightSide = [x * (gamma) / len(notDr) for x in sumNotRelevant]
-
-    finalVec = [0.0] * len(doc_term_weightings[0].weights)
-
-    queryVec = [x * (alpha) for x in queryVec]
-
-    for x in range(len(leftSide)):
-        finalVec[x] = queryVec[x] + leftSide[x] - rightSide[x]
-
-    return finalVec
+    return final_vec
 
 
-def kendallTau(vectorOne, vectorTwo, profile):
+def kendallTau(vectorOne, vectorTwo):
     kendall_tau_data = list()
 
     if os.path.exists("kendall_tau_data.pickle"):
@@ -300,7 +275,7 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
 
     print(relevant_or_not_relevant)
 
-    kendallTau(original_generated_ranking, user_ranking, profile)
+    kendallTau(original_generated_ranking, user_ranking)
 
     mean_average_precision(relevant_or_not_relevant)
     mean_reciprocal_rank(relevant_or_not_relevant)
@@ -330,7 +305,7 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle.dump(past_feedback, past_feedback_out)
 
     if method_to_use == "Rocchio":
-        new_query_weights = rocchioModel(alpha, beta, gamma, query_weights, doc_term_weightings,
+        new_query_weights = rocchio(alpha, beta, gamma, query_weights, doc_term_weightings,
                                          relevantIDs, nonrelevantIDs)
     elif method_to_use == "IDE Dec Hi":
         new_query_weights = ide_dec_hi(alpha, beta, gamma, query_weights, doc_term_weightings,
