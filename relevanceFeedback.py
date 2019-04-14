@@ -166,25 +166,25 @@ def mean_average_precision(documents):
         pickle_in_MAR = open("mean_average_precision_data.pickle", "rb")
         mean_average_precisions = pickle.load(pickle_in_MAR)
 
-    num_relevant_docs = 0
-    running_total = 0
+    num_relevant_docs = 0.0
+    running_total = 0.0
     precision_scores = []
 
     for doc in documents:
         if doc == 1:
-            num_relevant_docs += 1
+            num_relevant_docs += 1.0
 
-        running_total += 1
+        running_total += 1.0
         precision = num_relevant_docs / running_total
         precision_scores.append(precision)
 
-    average_precision = 0
+    average_precision = 0.0
     if num_relevant_docs != 0:
-        average_precision = sum(precision_scores) / num_relevant_docs
+        average_precision = sum(precision_scores) / float(num_relevant_docs)
 
     mean_average_precisions.append(average_precision)
     pickle.dump(mean_average_precisions, open("mean_average_precision_data.pickle", "wb"))
-    print("Mean Average Precision: " + str(average_precision))
+    print("Average Precision: " + str(average_precision))
 
     return mean_average_precision
 
@@ -192,24 +192,20 @@ def mean_average_precision(documents):
 # R-precision
 def r_precision(documents):
     r_precisions = []
+    r_precision = 0.0
 
     if os.path.exists("r_precision_data.pickle"):
         pickle_in_r_precision = open("r_precision_data.pickle", "rb")
         r_precisions = pickle.load(pickle_in_r_precision)
 
-    most_recent_relevant_doc = 0
-    running_total_documents = 0
-    total_documents_R = 0
 
+    num_relevant_docs = 0
     for doc in documents:
-        running_total_documents += 1
         if doc == 1:
-            most_recent_relevant_doc += 1
-            total_documents_R = running_total_documents
+            num_relevant_docs += 1
 
-    r_precision = 0
-    if most_recent_relevant_doc != 0:
-        r_precision = most_recent_relevant_doc / total_documents_R
+    if num_relevant_docs > 0:
+        r_precision = sum(documents[0: num_relevant_docs])/float(num_relevant_docs)
 
     r_precisions.append(r_precision)
     pickle.dump(r_precisions, open("r_precision_data.pickle", "wb"))
@@ -247,7 +243,6 @@ def mean_reciprocal_rank(documents):
     return mean_reciprocal_rank
 
 
-# movieIDs
 def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     alpha = 1.0
     beta = 1.0
@@ -318,3 +313,36 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle.dump(new_query_weights, pickle_out)
     pickle_out.close()
 
+'''
+def test_rocchio(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
+    sum_relevant = [0.0] * len(query_vec)
+    sum_not_relevant = [0.0] * len(query_vec)
+    final_vec = [0.0] * len(query_vec)
+
+    if len(Dr):
+        for doc_j in Dr:
+            sum_relevant = sum_vector(doc_term_weightings[doc_j], sum_relevant)
+        sum_relevant = [x/len(Dr) for x in sum_relevant]
+
+    if len(not_Dr):
+        for doc_j in not_Dr:
+            sum_not_relevant = sum_vector(doc_term_weightings[doc_j], sum_not_relevant)
+        sum_not_relevant = [x/len(not_Dr) for x in sum_not_relevant]
+
+    for index in range(0, len(query_vec)):
+        final_vec[index] = alpha * query_vec[index] + beta * sum_relevant[index] - gamma * sum_not_relevant[index]
+
+    return final_vec
+if __name__ == '__main__':
+    query_vec = [0, 0.3, 0.5, 0.1]
+    doc_term_weightings = dict()
+    Dr = [0, 1, 2]
+    not_Dr=[3]
+    doc_term_weightings[0] = [0.6, 0.5, 0.2, 1]
+    doc_term_weightings[1] = [0.3, 0.8, 0.1, 1]
+    doc_term_weightings[2] = [0.2, 0.1, 0.5, 0.9]
+    doc_term_weightings[3] = [0.4, 0.3, 0.25, 1]
+    print(test_rocchio(1, 1, 1, query_vec, doc_term_weightings, Dr, not_Dr))
+    documents= [1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1]
+    print(r_precision(documents))
+'''
