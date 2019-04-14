@@ -70,9 +70,6 @@
   transition: background-color .3s;
 }
 
-/*.btn:hover, .btn:focus {
-  background-color: #27ae60;
-}*/
 
 .btn span {
   display: block;
