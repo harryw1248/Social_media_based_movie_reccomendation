@@ -55,7 +55,7 @@ def scrape_profiles():
 def post_feedback():
     feedback = parse_feedback(request.form)
     profile = session['profile']
-    submit_feedback(feedback, profile)
+    submit_feedback(feedback, profile, request.form['model'])
     return redirect(url_for('recommendations'))
 
 @app.route('/recommendations')
