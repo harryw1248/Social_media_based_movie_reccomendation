@@ -61,8 +61,7 @@
 
     function Feedback(){
       var scores = $('.score').map(function() { return this.value }).get().sort();
-      var range10 = ["1", "10", "2", "3", "4", "5", "6", "7", "8", "9"];
-      if($('input[type=radio]:checked').length == 11 && scores == range10){
+      if($('input[type=radio]:checked').length == 11 && scores == "1,10,2,3,4,5,6,7,8,9"){
             document.getElementById('feedback').submit();
             return(true);
          } else {
