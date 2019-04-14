@@ -180,7 +180,7 @@ def mean_average_precision(documents):
 
     average_precision = 0.0
     if num_relevant_docs != 0:
-        average_precision = sum(precision_scores) / float(num_relevant_docs)
+        average_precision = sum(precision_scores) / float(len(documents))
 
     mean_average_precisions.append(average_precision)
     pickle.dump(mean_average_precisions, open("mean_average_precision_data.pickle", "wb"))
@@ -313,7 +313,7 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle.dump(new_query_weights, pickle_out)
     pickle_out.close()
 
-'''
+
 def test_rocchio(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
     sum_relevant = [0.0] * len(query_vec)
     sum_not_relevant = [0.0] * len(query_vec)
@@ -345,4 +345,5 @@ if __name__ == '__main__':
     print(test_rocchio(1, 1, 1, query_vec, doc_term_weightings, Dr, not_Dr))
     documents= [1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1]
     print(r_precision(documents))
-'''
+    documents= [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1]
+    mean_average_precision(documents)
