@@ -100,10 +100,11 @@ def createInvertedIndex(inverted_index, movieID, tokens):
 
 # Calculates weights for query vector using tf-idf scheme
 def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
+    words_to_remove = ["birthday", "bday", "facebook", "lol", "thank", "christmas", "hanukkah", "happy"]
     tokens = nltk.word_tokenize(query_string)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x != "birthday" and x != "bday")]
+    query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove)]
     query_tokens = stemWords(query_tokens)
 
     for i in range(0, len(query_tokens)):
@@ -393,7 +394,7 @@ def generate_recommendations(profile):
     pickle_in = open("synopsis_image_info.pickle", "rb")
     synopsis = pickle.load(pickle_in)
 
-    query = open("data/"+profile+"/posts.txt").read()
+    query = open("data/"+profile+"/fb_posts.txt").read()
 
     t0 = time.time()
 

@@ -347,4 +347,5 @@ if __name__ == '__main__':
     print(r_precision(documents))
     documents= [0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1]
     mean_average_precision(documents)
+    
 '''
