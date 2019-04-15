@@ -7,6 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from requests_html import HTMLSession, HTML
+import re
 
 service_id = 'eecs486project'
 session = HTMLSession()
@@ -100,7 +101,6 @@ def run_scraper(login_email, fb_profile, twitter_profile, bin_path):
     options = Options()
     options.binary_location ="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
  # '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
-    print(bin_path)
 
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-infobars")
