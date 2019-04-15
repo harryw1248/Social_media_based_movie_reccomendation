@@ -10,6 +10,7 @@ import os
 import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from names_dataset import NameDataset
 from relevanceFeedback import *
 import collaborative_filtering as cf
 
@@ -101,10 +102,12 @@ def createInvertedIndex(inverted_index, movieID, tokens):
 # Calculates weights for query vector using tf-idf scheme
 def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     words_to_remove = ["birthday", "bday", "facebook", "lol", "thank", "christmas", "hanukkah", "happy"]
+    m = NameDataset()
     tokens = nltk.word_tokenize(query_string)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove)]
+    query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove and
+                                                not m.search_first_name(x)) and not m.search_last_name(x)]
     query_tokens = stemWords(query_tokens)
 
     for i in range(0, len(query_tokens)):
