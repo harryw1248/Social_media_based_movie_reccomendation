@@ -394,7 +394,7 @@ def generate_recommendations(profile):
     pickle_in = open("synopsis_image_info.pickle", "rb")
     synopsis = pickle.load(pickle_in)
 
-    query = open("data/"+profile+"/fb_posts.txt").read()
+    query = open("data/"+profile+"/posts.txt").read()
 
     t0 = time.time()
 
