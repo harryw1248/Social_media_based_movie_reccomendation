@@ -98,7 +98,9 @@ def login(email):
 def run_scraper(login_email, fb_profile, twitter_profile, bin_path):
     global driver
     options = Options()
-    options.binary_location = bin_path # '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
+    options.binary_location ="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+ # '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
+    print(bin_path)
 
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-infobars")
