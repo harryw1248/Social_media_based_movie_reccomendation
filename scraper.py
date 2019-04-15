@@ -1,13 +1,12 @@
 import os
 import time
-import re
 import keyring
 from getpass import getpass
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from requests_html import HTMLSession, HTML
-from datetime import datetime
 
 service_id = 'eecs486project'
 session = HTMLSession()
@@ -37,22 +36,25 @@ def get_tweets(user):
 
 def scroll():
     current_scrolls = 0
-    old_height, new_height = 0, 0
-
+    prev_height, current_height = -1, 0
+    fails = 0
     while True:
-        try:
-            if current_scrolls == 5000:
-                return
-            old_height = new_height
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            if old_height == new_height:
-                break
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(1)
-            current_scrolls += 1
+        if prev_height == current_height:
+          fails += 1
+          time.sleep(2)
+        else:
+          fails = 0
+        if fails > 4 or current_scrolls == 500:
+            return
 
-        except TimeoutException:
-            break
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        html = driver.find_element_by_tag_name('html')
+        html.send_keys(Keys.END)
+        time.sleep(1)
+
+        prev_height = current_height
+        current_height = driver.execute_script("return document.body.scrollHeight")
+        current_scrolls += 1
     return
 
 def scrape(fb_profile, twitter_profile):
@@ -101,6 +103,7 @@ def run_scraper(login_email, fb_profile, twitter_profile, bin_path):
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-infobars")
     options.add_argument("--mute-audio")
+    options.add_argument("--incognito")
     # soptions.add_argument("headless")
 
     chromedriver = "./chromedriver" # place driver in main repo directory

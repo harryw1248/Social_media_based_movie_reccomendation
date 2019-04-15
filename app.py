@@ -1,17 +1,15 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import os, pickle, sys
+import keyring
 import inverted_index as recommender
 from relevanceFeedback import submit_feedback
 import scraper
-import keyring
 import twitter_scraper
 
 # Run with: python3 app.py <path to /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome >
 # (also make sure correct chromedriver executable is present in repo)
 
 app = Flask(__name__)
-
-# the service is just a namespace for your app
 service_id = 'eecs486project'
 
 # Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
@@ -36,6 +34,7 @@ class SimilarityData:
     def __init__(self, vocab_size):
         self.doc_length = 0
         self.weights = [0] * vocab_size
+
 
 def parse_feedback(form):
     res = list()
