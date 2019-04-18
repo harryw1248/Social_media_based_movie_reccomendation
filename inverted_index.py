@@ -106,14 +106,16 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     tokens = nltk.word_tokenize(query_string)
     tokens = [x for x in tokens if x not in string.punctuation]
     query_tokens = removeStopWords(tokens)  # Remove the stopwords
+    print(query_tokens)
     query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove and
                                                 not m.search_first_name(x)) and not m.search_last_name(x)]
     query_tokens = stemWords(query_tokens)
-    query_tokens = [x for x in query_tokens if x != 'birthdai']
+
 
     for i in range(0, len(query_tokens)):
         query_tokens[i] = query_tokens[i].lower()
 
+    query_tokens = [x for x in query_tokens if x != 'birthdai']
     print(query_tokens)
     query_appearances = collections.Counter()
     query_weights = [0] * len(inverted_index)  # Initialize vector to hold query weights

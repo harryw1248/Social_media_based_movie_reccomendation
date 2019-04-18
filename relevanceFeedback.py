@@ -94,7 +94,7 @@ def ide_dec_hi(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
         sum_relevant = sum_vector(doc_term_weightings[doc_j].weights, sum_relevant)
 
     if len(not_Dr):
-        index_of_most_non_relevant = not_Dr[len(not_Dr) - 1]
+        index_of_most_non_relevant = not_Dr[0]
         sum_not_relevant = doc_term_weightings[index_of_most_non_relevant].weights
 
     for index in range(0, len(query_vec)):
