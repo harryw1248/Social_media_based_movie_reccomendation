@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <head>
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-     <title> Movie Recommendations </title> 
+     <title> Movie Recommendations </title>
    </head>
     <body style = "background:LightGray;">
     <script language="JavaScript">
@@ -86,25 +86,32 @@
                            <p id="thanks_{{loop.index}}" style="font-size: 20px; display: inline; display:none; "> Thanks for the feedback ! </p>
                           <div id="feedback_{{loop.index}}" style="margin-left:auto; margin-right:0">
                             <p style="font-weight: normal; display: inline; "> Feedback: </p>
-                            <input style="display: none;" type="text" name="movieID_{{loop.index}}" value={{story[3]}} /> 
-                             <input id="score_{{loop.index}}" class="score" type="text" name="score_movie_{{loop.index}}" style="padding: 8px; width:15%; " placeholder="Rank (1-10)" value="{{11-loop.index}}" /> 
+                            <input style="display: none;" type="text" name="movieID_{{loop.index}}" value={{story[3]}} />
+                             <input id="score_{{loop.index}}" class="score" type="text" name="score_movie_{{loop.index}}" style="padding: 8px; width:15%; " placeholder="Rank (1-10)" />
                             <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="relevant"></input>
                             <input style="display: none;" name="relevancy_movie_{{loop.index}}" type="radio" value="irrelevant"></input>
                             <button id="btn_{{loop.index}}_0" type="button" class="btn" onClick="feedbackMovie('{{loop.index}}', 0)"><span>Relevant</span></button>
                             <button id="btn_{{loop.index}}_1" type="button" class="btn" style="background-color:red;" onClick="feedbackMovie('{{loop.index}}', 1)"><span>Not Relevant</span></button>
-                           
+
                           </div>
 
                     </div>
-       
-                    
+
+
                 {% endfor %}
 
         </div>
         <div class="sform animated " style = "background:LightSteelBlue;">
             <h1 style = "margin-top:-10px; text-align: left; color:white; font-size:34px;">Movies</h1> <i id="icon" class="icon-fa-book fa fa-book" style="float:left;margin-top:-80px;margin-left:132px;text-shadow: 0px 0px rgb(123,137,155), 1px 1px rgb(130,145,164), 2px 2px rgb(136,152,172), 3px 3px rgb(143,159,180), 4px 4px rgb(150,167,189), 5px 5px rgb(156,174,197), 6px 6px rgb(163,181,205), 7px 7px rgb(169,189,214); font-size: 26px; color: rgb(255, 255, 255); height: 80px; width: 80px; line-height: 80px; border-radius: ; text-align: center; background-color: rgb(176, 196, 222);"></i>
             <div style="position: relative; bottom: 0;">
-               (Courtney Cox) puts Ace on the case. However, Snowflake isn't the only Miami Dolphin who has gone missing; several key members of the team also disappear, including quarterback Dan Marino (who plays himself), who is spirited away while filming a TV commercial. With the Super Bowl only two weeks away,  (Courtney Cox) puts Ace on the case. However, Snowflake isn't the only Miami Dolphin who has gone missing; several key members of the team also disappear, including quarterback Dan Marino (who plays himself), who is spirited away while filming a TV commercial. With the Super Bowl only two weeks away, 
+               <div style="text-align:left; color:yellow;">
+                  <br>
+                   1. View your top 10 recommendations. <br><br>
+                   2. Rank them from 1-10 based on your preferences <br><br>
+                   3. Label each movie as relevant or nonrelevant <br><br>
+                   4. Select your desired feedback method <br><br>
+                   5. Wait for updated recommendations and repeat <br>
+                </div>
             <div style = "margin-top:65px;">
                <button type="button" onClick="window.location.href='/'"> Return to Home </button>
             </div>
