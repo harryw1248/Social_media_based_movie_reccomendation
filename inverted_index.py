@@ -1,3 +1,8 @@
+'''
+    This file will compute the cosine similarity scores between the database of TF-IDF movie vectors by creating
+    the TF-IDF query vector and will return a ranked list of 10 movie recommendations
+'''
+
 from preprocess import removeStopWords, stemWords
 import math
 import collections
@@ -198,73 +203,116 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     return (query_weights, query_length, query_appearances)             # Returns the tuple of necessary data
 
 
-# Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length, doc_term_weightings,
-                                upvoting_factor=1.05, downvoting_factor=0.95):
-   docs_with_at_least_one_matching_query_term = set()
-   docs_with_scores = dict()
+'''
+    Uses the query data and collaborative filtering to retrieve movies with at least one matching query term
+    and calls calculateCosineSimilarity
+    
+    Args:
+        query_appearances(dict)
+        inverted_index(dict)
+        query_weights(list of floats)
+        query_length(float)
+        doc_term_weightings(dict)
+        upvoting_factor(float): 1.05 (default)
+        downvoting_factor(float): 0.95 (default)
+'''
+def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length,
+                                doc_term_weightings, upvoting_factor=1.05, downvoting_factor=0.95):
 
-   # Use a set to hold every movieID in which at least one query term appears
-   for query_term in query_appearances:
-       if query_term in inverted_index:
-           for posting_data in inverted_index[query_term].posting_list:
-               docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
+    docs_with_at_least_one_matching_query_term = set()
+    docs_with_scores = dict()
 
-   past_feedback = list()
-   if not os.path.exists("past_feedback.pickle"):
-       past_feedback_in = open("past_feedback.pickle", "wb")
-       past_feedback_in.close()
+    # Use a set to hold every movieID in which at least one query term appears
+    for query_term in query_appearances:
+        if query_term in inverted_index:
+            for posting_data in inverted_index[query_term].posting_list:
+                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
 
-   else:
-       try:
-           past_feedback_in = open("past_feedback.pickle", "rb")
-           past_feedback = pickle.load(past_feedback_in)
-       except:
-           past_feedback = list()
+    past_feedback = list()
 
-   # Collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
-   if len(past_feedback):
+    # Does error checking for if the past_feedback exists already and whether or not it's empty
+    if not os.path.exists("past_feedback.pickle"):
+        past_feedback_in = open("past_feedback.pickle", "wb")
+        past_feedback_in.close()
+
+    else:
+        try:
+            past_feedback_in = open("past_feedback.pickle", "rb")
+            past_feedback = pickle.load(past_feedback_in)
+        except:
+            past_feedback = list()
+
+    # Collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
+    if len(past_feedback):
         relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, past_feedback)
-   else:
-       relevant_movie_ids = irrelevant_movie_ids = []
+    else:
+        relevant_movie_ids = irrelevant_movie_ids = []
 
-   # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
-   # If collaborative filtering is applicable, it upvotes or downvotes the resulting cosine similarity scores accordingly
-   for movieID in docs_with_at_least_one_matching_query_term:
-       docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                           doc_term_weightings[movieID].doc_length, query_length)
-       if movieID in relevant_movie_ids:
-           docs_with_scores[movieID] *= upvoting_factor
+    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
+    # If collaborative filtering is applicable, upvote or downvote the resulting cosine similarity score accordingly
+    for movieID in docs_with_at_least_one_matching_query_term:
+        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
+                                                             doc_term_weightings[movieID].doc_length, query_length)
+        if movieID in relevant_movie_ids:
+            docs_with_scores[movieID] *= upvoting_factor
 
-       if movieID in irrelevant_movie_ids:
-           docs_with_scores[movieID] *= downvoting_factor
+        if movieID in irrelevant_movie_ids:
+            docs_with_scores[movieID] *= downvoting_factor
 
-   return docs_with_scores
+    return docs_with_scores
 
 
+'''
+    Preprocesses the relevant movie data (script, synopsis) using tokenization, stopword removal, and stemming
+    and then sends the list of tokens to createInvertedIndex()
+    
+    Args:
+        document(list of str)
+        inverted_index(dict)
+        movieID(int)
+    
+    Return:
+        None
+'''
 def indexDocument(document, inverted_index, movieID):
-    tokens = nltk.word_tokenize(document)
+    tokens = nltk.word_tokenize(document)                               # Tokenize the script/synopsis
     tokens = [x for x in tokens if x not in string.punctuation]
-    tokens = removeStopWords(tokens)  # Remove the stopwords
-    tokens = stemWords(tokens)      # PorterStemmer
+    tokens = removeStopWords(tokens)                                    # Remove the stopwords
+    tokens = stemWords(tokens)                                          # Stem words
 
     for i in range(0, len(tokens)):
-        tokens[i] = tokens[i].lower()
+        tokens[i] = tokens[i].lower()                                   # Makes all words lowercase
 
-    createInvertedIndex(inverted_index, movieID, tokens)   # Create the inverted index
+    createInvertedIndex(inverted_index, movieID, tokens)                # Create the inverted index
 
+
+'''
+    Retrieves previously created query TF-IDF vector or creates a new one and then calls calculateDocumentSimilarity()
+    
+    Args:
+        profile(str)
+        query(str)
+        inverted_index(dict)
+        doc_term_weightings(dict)
+    
+    Return:
+        dict
+'''
 
 def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
     query_weights = list()
     query_appearances = collections.Counter()
     query_length = 0.0
 
+    # If the query vector for this profile has never been computed
     if not os.path.exists("data/"+profile+"/query_appearances.pickle") and not\
         os.path.exists("data/"+profile+"/query_weights.pickle"):
         query_appearances = collections.Counter()
         num_files = len(doc_term_weightings) + 0.0
-        (query_weights, query_length, query_appearances) = calculateQueryDataTFIDF(query, inverted_index, num_files, profile)
+        (query_weights, query_length, query_appearances) = calculateQueryDataTFIDF(query, inverted_index,
+                                                                                   num_files, profile)
 
+    # The query vector for this profile was previously computed
     else:
         pickle_in = open("data/"+profile+"/query_weights.pickle", "rb")
         query_weights = pickle.load(pickle_in)
@@ -281,8 +329,19 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
                                        query_weights, query_length, doc_term_weightings)
 
 
-# This function is utilizing within the process of constructing the pickle files
-#
+'''
+    This function is only called in creation of the inverted index when scraping rottentomates.com for synopses.
+    Since the web crawling relies on retrieving the correct movie name in the site, certain movies have to have
+    their names modified to create the correct URL. The modification of certain punctuation or special case movie
+    titles is included to get the appropriate data.
+    
+    Args:
+        title (str)
+    
+    Return:
+        title (str)
+'''
+
 def correct_title_exceptions(title):
     title = title.replace(" ", "_")
 
@@ -333,10 +392,31 @@ def correct_title_exceptions(title):
 
     return title
 
+'''
+    -Creates all the necessary pickle files:
+        1. index_to_movies maps each movieID to a string of the movie's name
+        2. doc_term_weightings map each movieID to the TF-IDF weights and the length of the weights vector
+        3. inverted_index maps each movieID to the list of words in the corpus that appear in the document
+        4. synopsis_image_info maps each movieID to a synopsis (if found) and a movie poster image link (but 
+            this was never accomplished because we could not figure out a way to do it)
+            
+    -Performs scraping of rotten_tomatoes using chromedriver
+    -Uses the pickle file "movie_attributes.pickle" to retrieve available tags 
+    -Manages the creation of the inverted index and the TF-IDF vectors for document weights
+    
+    Args:
+        inverted_index(dict)
+        num_files(int)
+        synopsis_image_info (dict)
+        index_to_movies(dict)
+        doc_term_weightings(dict)
+    
+    Return:
+        None
+'''
 def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies, doc_term_weightings):
-    current_index = 0
+    # Sets up the chromedriver for web browsing
     global driver
-
     options = Options()
 
     chromedriver = "./chromedriver"
@@ -356,6 +436,7 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
     movie_attributes = pickle.load(pickle_tags)
 
     doc_folder = ""
+    current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
         file = open(os.getcwd() + "/" + doc_folder + filename, 'r')  # Open the file
@@ -378,7 +459,7 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
             index = movie_title.find(", A")
             movie_title = "A " + movie_title[0: index]
 
-        print(movie_title + ", Index: " + str(current_index))
+        print(movie_title + ", Index: " + str(current_index))               # Lets user know which movies have been seen
 
         index_to_movies[current_index] = movie_title
         script = file.read()
@@ -419,14 +500,13 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
                     num_found += 1
                 except:
                     synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
-                    print(str(movie_num) + " " + movie_title + " NOT FOUND")
+                    print(str(movie_num) + " " + movie_title + " NOT FOUND")    # If movie synopsis not found
             else:
                 synopsis_image_info[movieID] = ("No synopsis found.", "No image available.")
-                print(str(movie_num) + " " + movie_title + " NOT FOUND")
+                print(str(movie_num) + " " + movie_title + " NOT FOUND")        # If movie synopsis not found
 
         movie_num += 1
-
-        indexDocument(script, inverted_index, movieID)  # Update the inverted index
+        indexDocument(script, inverted_index, movieID)                          # Update the inverted index
         file.close()
         num_files += 1
         current_index = current_index + 1
@@ -434,6 +514,7 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
     # Once inverted index is complete, compute document weights using the appropriate weighting scheme
     computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings)
 
+    # Write all info to pickle files to avoid having to recompute every time
     pickle_out1 = open("inverted_index.pickle", "wb")
     pickle.dump(inverted_index, pickle_out1)
     pickle_out1.close()
@@ -444,26 +525,50 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
     pickle.dump(index_to_movies, pickle_out3)
     pickle_out3.close()
 
-def generate_recommendations(profile):
-    pickle_in = open("inverted_index.pickle", "rb")
-    inverted_index = pickle.load(pickle_in)
-    pickle_in = open("doc_term_weightings.pickle", "rb")
-    doc_term_weightings = pickle.load(pickle_in)
-    pickle_in = open("index_to_movies.pickle", "rb")
-    index_to_movies = pickle.load(pickle_in)
-    pickle_in = open("synopsis_image_info.pickle", "rb")
-    synopsis = pickle.load(pickle_in)
 
-    query = open("data/"+profile+"/posts.txt").read()
+''' 
+   Called by the Flask application to calculate cosine similarity measures for a given user's profile
+   If create_new_pickle_files is set to True, then the entire movie database, tags, and synopses will be retrieved
+   and scraped to create new inverted_index, doc_term_weightings, etc.
+   
+   Args:
+        profile (str)
+        create_new_pickle_files(bool): False(default)
+    
+    Return:
+        ranked_list(dict) 
+'''
+def generate_recommendations(profile, create_new_pickle_files=False):
+    inverted_index = dict()
+    doc_term_weightings = dict()
+    index_to_movies = dict()
+    synopsis = dict()
 
-    t0 = time.time()
+    if create_new_pickle_files:
+        create_data(inverted_index, 0, synopsis, index_to_movies, doc_term_weightings)
 
+    else:
+        # Opens all necessary pickle files
+        pickle_in = open("inverted_index.pickle", "rb")
+        inverted_index = pickle.load(pickle_in)
+        pickle_in = open("doc_term_weightings.pickle", "rb")
+        doc_term_weightings = pickle.load(pickle_in)
+        pickle_in = open("index_to_movies.pickle", "rb")
+        index_to_movies = pickle.load(pickle_in)
+        pickle_in = open("synopsis_image_info.pickle", "rb")
+        synopsis = pickle.load(pickle_in)
+
+    query = open("data/"+profile+"/posts.txt").read()                               # Open the social media text file
+    t0 = time.time()                                                                # Keeps track of computation time
     print("Searching for your recommended movies...\n")
 
+    # Retrieves a ranking of all movies in the database with cosine similarity scores
     docs_with_scores = retrieveDocuments(profile, query, inverted_index, doc_term_weightings)
 
+    # Sorts the retrieved list of movies by cosine similarity
     recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list
 
+    # Contains each movie's name, synopsis, image link (not used), movieID, and cosine similarity score
     ranked_list = [(index_to_movies[movieID], synopsis[movieID][0],
                     synopsis[movieID][1], movieID, score) for movieID, score in recs]
 
