@@ -4,9 +4,11 @@
 ## Dependencies
 
 Run this command to install the dependencies needed for this project
+
 `pip3 install -r requirements.txt`
 
 Download pickles files from Google Drive
+
 Link:
 
 ## How to run:
@@ -23,7 +25,7 @@ to the path specified in the terminal.
 8. Follow the instructions on the side panel of the page to submit feedback and update your recommendations.
 
 
-![alt text](gui.png "GUI Picture")
+![alt text](static/images/gui.png "GUI Picture")
 
 
 ## Repo Tree
@@ -33,22 +35,10 @@ to the path specified in the terminal.
 ├── app.py
 ├── chromedriver
 ├── collaborative_filtering.py
-├── doc_term_weightings.pickle
-├── eval_metrics.csv
+├── dataset_parse.py
 ├── evaluation_graphs.py
-├── index_to_movies.pickle
-├── inverted_index.pickle
 ├── inverted_index.py
-├── kendall_tau_data.pickle
-├── mean_average_precision_data.pickle
-├── movie_attributes.pickle
-├── mrr_data.pickle
-├── past_feedback.pickle
 ├── preprocess.py
-├── query_appearances.pickle
-├── query_weights.pickle
-├── r_precision_data.pickle
-├── recs.pickle
 ├── relevanceFeedback.py
 ├── scraper.py
 ├── static
@@ -58,7 +48,6 @@ to the path specified in the terminal.
 │   ├── images
 │   │   └── avengers.jpg
 │   └── rec_style.css
-├── synopsis_image_info.pickle
 ├── templates
 │   ├── homepage.html
 │   └── recommendations.html
