@@ -10,6 +10,7 @@ Run this command to install the dependencies needed for this project
 Download pickles files from Google Drive
 
 Link:
+https://drive.google.com/open?id=1oY1ObZNDpravOaSeeP-OIHsAS96xkBf7
 
 ## How to run:
 
@@ -46,7 +47,8 @@ to the path specified in the terminal.
 │   ├── formstyle.css
 │   ├── home_style.css
 │   ├── images
-│   │   └── avengers.jpg
+│   │   ├── avengers.jpg
+│   │   └── gui.png
 │   └── rec_style.css
 ├── templates
 │   ├── homepage.html
