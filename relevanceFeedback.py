@@ -5,62 +5,7 @@ import time
 import os
 import sys
 from inverted_index import *
-'''
-# Class that holds a posting list, length of posting list, and max term frequency for any term in the inverted index
-class PostingList:
 
-    def __init__(self):
-        self.posting_list = list()
-        self.length = 1
-        self.max_tf = 0.0
-
-
-# For each element in a posting list, the document ID and the corresponding term frequency are stored
-class PostingData:
-
-    def __init__(self, movieID_in, tf_in):
-        self.movieID = movieID_in
-        self.tf = tf_in
-
-
-# When the dictionary of document weights is created, each document maps to a vector of weights and its document length
-class SimilarityData:
-    def __init__(self, vocab_size):
-        self.doc_length = 0
-        self.weights = [0] * vocab_size
-
-
-# Function that calculates the cosine similarity of document and query vectors
-def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_length):
-    dot_product = 0.0
-
-    # Iteratively computes dot product by multiplying respective elements in query and document vectors and summing
-    for index in range(0, len(doc_weights)):
-        dot_product += doc_weights[index] * query_weights[index]
-
-    # Final value is the dot product divided by the product of document and query lengths
-    return dot_product / (doc_length * query_length)
-
-
-# Returns ordered ranking of retrieved documents
-def calculateDocumentSimilarity(doc_term_weightings, query_appearances, inverted_index, query_weights, query_length):
-    docs_with_at_least_one_matching_query_term = set()
-    docs_with_scores = dict()
-
-    # Use a set to hold every movieID in which at least one query term appears
-    for query_term in query_appearances:
-        if query_term in inverted_index:
-            for posting_data in inverted_index[query_term].posting_list:
-                docs_with_at_least_one_matching_query_term.add(posting_data.movieID)
-
-    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
-    for movieID in docs_with_at_least_one_matching_query_term:
-        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                              doc_term_weightings[movieID].doc_length, query_length)
-
-    return docs_with_scores
-
-'''
 def sum_vector(v1, v2):
     finalResult = [0.0] * len(v1)
     for elt in range(0, len(v1)):
@@ -189,31 +134,6 @@ def mean_average_precision(documents):
     return mean_average_precision
 
 
-# R-precision
-def r_precision(documents):
-    r_precisions = []
-    r_precision = 0.0
-
-    if os.path.exists("r_precision_data.pickle"):
-        pickle_in_r_precision = open("r_precision_data.pickle", "rb")
-        r_precisions = pickle.load(pickle_in_r_precision)
-
-
-    num_relevant_docs = 0
-    for doc in documents:
-        if doc == 1:
-            num_relevant_docs += 1
-
-    if num_relevant_docs > 0:
-        r_precision = sum(documents[0: num_relevant_docs])/float(num_relevant_docs)
-
-    r_precisions.append(r_precision)
-    pickle.dump(r_precisions, open("r_precision_data.pickle", "wb"))
-    print("R-Precision: " + str(r_precision))
-
-    return r_precision
-
-
 # MRR
 def mean_reciprocal_rank(documents):
     mean_reciprocal_ranks = []
@@ -274,7 +194,6 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
 
     mean_average_precision(relevant_or_not_relevant)
     mean_reciprocal_rank(relevant_or_not_relevant)
-    r_precision(relevant_or_not_relevant)
 
     pickle_in = open("doc_term_weightings.pickle", "rb")
     doc_term_weightings = pickle.load(pickle_in)
@@ -312,40 +231,3 @@ def submit_feedback(user_relevance_info, profile, method_to_use="Rocchio"):
     pickle_out = open("data/"+profile+"/query_weights.pickle", "wb")
     pickle.dump(new_query_weights, pickle_out)
     pickle_out.close()
-
-'''
-def test_rocchio(alpha, beta, gamma, query_vec, doc_term_weightings, Dr, not_Dr):
-    sum_relevant = [0.0] * len(query_vec)
-    sum_not_relevant = [0.0] * len(query_vec)
-    final_vec = [0.0] * len(query_vec)
-
-    if len(Dr):
-        for doc_j in Dr:
-            sum_relevant = sum_vector(doc_term_weightings[doc_j], sum_relevant)
-        sum_relevant = [x/len(Dr) for x in sum_relevant]
-
-    if len(not_Dr):
-        for doc_j in not_Dr:
-            sum_not_relevant = sum_vector(doc_term_weightings[doc_j], sum_not_relevant)
-        sum_not_relevant = [x/len(not_Dr) for x in sum_not_relevant]
-
-    for index in range(0, len(query_vec)):
-        final_vec[index] = alpha * query_vec[index] + beta * sum_relevant[index] - gamma * sum_not_relevant[index]
-
-    return final_vec
-if __name__ == '__main__':
-    query_vec = [0, 0.3, 0.5, 0.1]
-    doc_term_weightings = dict()
-    Dr = [0, 1, 2]
-    not_Dr=[3]
-    doc_term_weightings[0] = [0.6, 0.5, 0.2, 1]
-    doc_term_weightings[1] = [0.3, 0.8, 0.1, 1]
-    doc_term_weightings[2] = [0.2, 0.1, 0.5, 0.9]
-    doc_term_weightings[3] = [0.4, 0.3, 0.25, 1]
-    print(test_rocchio(1, 1, 1, query_vec, doc_term_weightings, Dr, not_Dr))
-    documents= [1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1]
-    print(r_precision(documents))
-    documents= [0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1]
-    mean_average_precision(documents)
-    
-'''
