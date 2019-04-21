@@ -1,11 +1,13 @@
-# EECS_486_final_project
-
 # A Social Media Based Recommendation System
+### Vinny Ahluwalia, Shaeq Ahmed, Joshua Israel, Anthony Liang, Harry Wang  (Team 4)
 
 ## Dependencies
 
 Run this command to install the dependencies needed for this project
 `pip3 install -r requirements.txt`
+
+Download pickles files from Google Drive
+Link:
 
 ## How to run:
 
@@ -21,7 +23,7 @@ to the path specified in the terminal.
 8. Follow the instructions on the side panel of the page to submit feedback and update your recommendations.
 
 
-![alt text](gui.png "Logo Title Text 1")
+![alt text](gui.png "GUI Picture")
 
 
 ## Repo Tree
