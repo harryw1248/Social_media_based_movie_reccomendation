@@ -1,12 +1,14 @@
 '''
-input data:
-list of previous queries that where each item was
-(query_vector_weights, list of relevant movie_ids, list of irrelevant movie_ids);
-current query
+This file implements the collaborative filtering mechanism.
+The feature upweights the relevant movies of the previous user that is most similar to the current user
+and downweights the irrelevant movies of the previous user that is most similar to the current user
 '''
 import numpy as np
 import math
 
+'''
+Find the euclidean distance between the current query vector and a previous query vector
+'''
 def euclidean_distance(current_query, previous_query):
 
     distance = 0.0
@@ -17,6 +19,12 @@ def euclidean_distance(current_query, previous_query):
 
     return distance
 
+'''
+Find the previous user that is the most similar to the current user
+previous_queries is a list of previous queries where each item follows the following tuple format:
+(query_vector_weights (list), list of relevant movie_ids, list of irrelevant movie_ids)
+Returns a list of previously relevant movies and a list of previously irrelevant movies
+'''
 def find_nearest_neighbor(current_query, previous_queries):
     relevant_movie_ids = []
     irrelevant_movie_ids = []
