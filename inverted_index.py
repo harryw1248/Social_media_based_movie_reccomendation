@@ -38,31 +38,53 @@ class SimilarityData:
         self.doc_length = 0
         self.weights = [0] * vocab_size
 
-
-# Computes the document vector weights using weighting scheme #1: TF-IDF
+'''
+    Computes the document vector weights using non-normalized TF-IDF weighting scheme and stores the necessary weights
+    TF-IDF is calculated as (term frequency) * (N/document frequency)
+    Args:
+        inverted_index(dict)
+        num_files(int)
+        doc_term_weightings(dict)
+    Return:
+        None
+'''
 def computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings):
-    # Intializes global variable holding document term weightings to SimilarityData() objects
+    # Intializes dict of document term weightings so each movieID maps to a SimilarityData() object
     for movieID in range(0, num_files + 1):
         doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
 
     index = 0
-    for term in inverted_index: # Iterates through each term in the inverted index
+
+    for term in inverted_index:
         for posting_data in inverted_index[term].posting_list:  # Iterates through each document in each posting list
-            tf = posting_data.tf                        # tf is frequency of term in a document
-            num_postings = inverted_index[term].length  # num_postings is document frequency
+            tf = posting_data.tf                                # tf is frequency of term in a document
+            num_postings = inverted_index[term].length          # num_postings is document frequency
             movieID = posting_data.movieID
-            if tf > 0.0:    # Only spend computational effort if term frequency is greater than zero
-                # tf-idf = tf * idf
+
+            if tf > 0.0:                                        # Only spend computational effort if tf > 0
                 idf = math.log10(num_files / num_postings)
                 doc_term_weightings[movieID].weights[index] = tf * idf
                 doc_term_weightings[movieID].doc_length += ((tf * idf) * (tf * idf))  # Update running total for length
+
             else:
                 continue
-        index += 1  # Increment index to move to next term
 
-    for movieID in range(1, num_files + 1):   # Finish calculating doc lengths
+        index += 1
+
+    for movieID in range(1, num_files + 1):   # Finish calculating doc lengths using sqrt() of the running total
         doc_term_weightings[movieID].doc_length = math.sqrt(doc_term_weightings[movieID].doc_length)
 
+
+'''
+    Calculates the cosine similarity of a vector of document weights and a vector of query weights
+    Args:
+        doc_weights(list)
+        query_weights(list)
+        doc_length(int)
+        query_length(float)
+    Return:
+        cosine similarity value(float)
+'''
 
 # Function that calculates the cosine similarity of document and query vectors
 def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_length):
@@ -76,22 +98,36 @@ def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_leng
     return dot_product/(doc_length * query_length)
 
 
-# Creates the inverted index by initializing each term in the corpus
+'''
+    Updates the inverted index to include the inverted index entry for a given movie and its corresponding tokens 
+    Args:
+        inverted_index(dict)
+        movieID(int)
+        tokens(list of str)
+    Return:
+        None
+'''
+
 def createInvertedIndex(inverted_index, movieID, tokens):
-    for token in tokens:    # Iterate through each token in the document
-        if token in inverted_index: # If the token is already in the inverted index
-            current_posting_list_length = inverted_index[token].length  # Calculate length of posting list so far
+    for token in tokens:
+
+        if token in inverted_index:
+            current_posting_list_length = inverted_index[token].length
             # If the last entry in the posting list is the same document, just increment the term frequency
+
             if inverted_index[token].posting_list[current_posting_list_length - 1].movieID == movieID:
                 inverted_index[token].posting_list[current_posting_list_length - 1].tf += 1
                 new_tf = inverted_index[token].posting_list[current_posting_list_length - 1].tf
+
                 # Update the max term frequency as needed
                 if inverted_index[token].max_tf < new_tf:
                     inverted_index[token].max_tf = new_tf
+
             # If movieID not yet part of this posting list, add it to the end and increase the length of list by one
             else:
                 inverted_index[token].posting_list.append(PostingData(movieID, 1))
                 inverted_index[token].length += 1
+
         # However, if term not yet in the index, create a whole new posting list and make this movieID the first entry
         else:
             inverted_index[token] = PostingList()
@@ -99,36 +135,49 @@ def createInvertedIndex(inverted_index, movieID, tokens):
             inverted_index[token].max_tf = 1
 
 
-# Calculates weights for query vector using tf-idf scheme
+'''
+    Computes the query vector weights using non-normalized TF-IDF weighting scheme
+    TF-IDF is calculated as (term frequency) * (N/document frequency)
+    Args:
+        query_string(str)
+        inverted_index(dict)
+        num_files(int)
+        profile(str)
+    Return:
+        tuple (list of float; float; dict)
+'''
 def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
+    # List of words to remove words from profile text that appear often but have no bearing on user's likes/dislikes
     words_to_remove = ["birthday", "bday", "facebook", "lol", "thank", "christmas", "hanukkah", "happy"]
+
+    # First we must preprocess the query (social media profile)
     m = NameDataset()
-    tokens = nltk.word_tokenize(query_string)
-    tokens = [x for x in tokens if x not in string.punctuation]
-    query_tokens = removeStopWords(tokens)  # Remove the stopwords
-    # print(query_tokens)
+    tokens = nltk.word_tokenize(query_string)                           # Tokenizes the string using NLTK
+    tokens = [x for x in tokens if x not in string.punctuation]         # Don't include punctuation
+    query_tokens = removeStopWords(tokens)                              # Remove the stopwords
+
+    # Only includes words that are: 1.) In English 2.) Not in  words_to_remove 3.) Not a first name or last name
     query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove and
                                                 not m.search_first_name(x)) and not m.search_last_name(x)]
-    query_tokens = stemWords(query_tokens)
 
+    query_tokens = stemWords(query_tokens)                              # Stem words for preprocessing
 
-    for i in range(0, len(query_tokens)):
+    for i in range(0, len(query_tokens)):                               # Converts all tokens to lowercase
         query_tokens[i] = query_tokens[i].lower()
 
-    query_tokens = [x for x in query_tokens if x != 'birthdai']
-    # print(query_tokens)
+    query_tokens = [x for x in query_tokens if x != 'birthdai']         # Makes sure this common word doesn't appear
     query_appearances = collections.Counter()
-    query_weights = [0] * len(inverted_index)  # Initialize vector to hold query weights
-    for query_token in query_tokens:
-        query_appearances[query_token] += 1
+    query_weights = [0] * len(inverted_index)                           # Initialize vector to hold query weights
     query_length = 0.0
+    l = list(inverted_index.keys())                                     # Gets list of tuples (query_term, index)
 
-    l = list(inverted_index.keys())
+    for query_token in query_tokens:                                    # Counter that keeps track of word appearances
+        query_appearances[query_token] += 1
 
     # Iterate through each term in the query vector and assign nonzero weight if the term appears in inverted index
     for query_term in query_appearances:
         if query_term in inverted_index:
-            index_of_word = l.index(query_term)     # Since ordered dict, calculate index of term
+            index_of_word = l.index(query_term)                         # Since ordered dict, calculate index of term
             num_postings = inverted_index[query_term].length + 0.0      # Document frequency
             idf = math.log10(num_files / num_postings)                  # Inverse document frequency
             tf = query_appearances[query_term]                          # Term frequency
@@ -137,6 +186,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
 
     query_length = math.sqrt(query_length)                              # Calculate final query length
 
+    # Writes the query data to pickles
     pickle_out = open("data/"+profile+"/query_appearances.pickle", "wb")
     pickle.dump(query_appearances, pickle_out)
     pickle_out.close()
@@ -145,7 +195,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     pickle.dump(query_weights, pickle_out2)
     pickle_out2.close()
 
-    return (query_weights, query_length, query_appearances)
+    return (query_weights, query_length, query_appearances)             # Returns the tuple of necessary data
 
 
 # Returns ordered ranking of retrieved documents
@@ -172,13 +222,14 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
        except:
            past_feedback = list()
 
-   #collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
+   # Collaborative filtering: find nearest neighbor (previous user), extract list of relevant and irrelevant movies
    if len(past_feedback):
         relevant_movie_ids, irrelevant_movie_ids = cf.find_nearest_neighbor(query_weights, past_feedback)
    else:
        relevant_movie_ids = irrelevant_movie_ids = []
 
    # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
+   # If collaborative filtering is applicable, it upvotes or downvotes the resulting cosine similarity scores accordingly
    for movieID in docs_with_at_least_one_matching_query_term:
        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
                                                            doc_term_weightings[movieID].doc_length, query_length)
@@ -223,13 +274,15 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
         for elt in query_weights:
             query_length += elt * elt
 
-        query_length= math.sqrt(query_length)
+        query_length = math.sqrt(query_length)
 
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
     return calculateDocumentSimilarity(query_appearances, inverted_index,
                                        query_weights, query_length, doc_term_weightings)
 
 
+# This function is utilizing within the process of constructing the pickle files
+#
 def correct_title_exceptions(title):
     title = title.replace(" ", "_")
 
