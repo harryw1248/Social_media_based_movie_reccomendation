@@ -9,9 +9,9 @@ import json
 import pickle
 
 '''
-    Reads in a csv file and return a dataframe. A dataframe df is similar to dictionary.
-    You can access the label by calling df['label'], the content by df['content']
-    the rating by df['rating']
+Reads in a csv file and return a dataframe. A dataframe df is similar to dictionary.
+You can access the label by calling df['label'], the content by df['content']
+the rating by df['rating']
 '''
 def load_data(fname):
     return pd.read_csv(fname)
@@ -83,7 +83,7 @@ def get_movie_tags(dataframe):
     return movie_tags
 
 '''
-Takes the dictionaris that has the movie genres and movie tags and combines their corresponding lists for each movies
+Takes the dictionaries that has the movie genres and movie tags and combines their corresponding lists for each movies
 Returns a dictionary that has the movie name as the key and the combined list of genres and tags
 '''
 def combine_attributes(movie_ids, movie_genres, movie_tags):
