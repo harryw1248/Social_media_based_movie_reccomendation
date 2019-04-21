@@ -3,7 +3,7 @@
     the TF-IDF query vector and will return a ranked list of 10 movie recommendations
 '''
 
-from preprocess import removeStopWords, stemWords
+from preprocess import remove_stopwords, stem_words
 import math
 import collections
 import pickle
@@ -53,7 +53,7 @@ class SimilarityData:
     Return:
         None
 '''
-def computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings):
+def compute_doc_weights_TFIDF(inverted_index, num_files, doc_term_weightings):
     # Intializes dict of document term weightings so each movieID maps to a SimilarityData() object
     for movieID in range(0, num_files + 1):
         doc_term_weightings[movieID] = SimilarityData(len(inverted_index))
@@ -92,7 +92,7 @@ def computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings):
 '''
 
 # Function that calculates the cosine similarity of document and query vectors
-def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_length):
+def calculate_cosine_similarity(doc_weights, query_weights, doc_length, query_length):
     dot_product = 0.0
 
     # Iteratively computes dot product by multiplying respective elements in query and document vectors and summing
@@ -113,7 +113,7 @@ def calculateCosineSimilarity(doc_weights, query_weights, doc_length, query_leng
         None
 '''
 
-def createInvertedIndex(inverted_index, movieID, tokens):
+def create_inverted_index(inverted_index, movieID, tokens):
     for token in tokens:
 
         if token in inverted_index:
@@ -151,7 +151,7 @@ def createInvertedIndex(inverted_index, movieID, tokens):
     Return:
         tuple (list of float; float; dict)
 '''
-def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
+def calculate_query_TFIDF(query_string, inverted_index, num_files, profile):
     # List of words to remove words from profile text that appear often but have no bearing on user's likes/dislikes
     words_to_remove = ["birthday", "bday", "facebook", "lol", "thank", "christmas", "hanukkah", "happy"]
 
@@ -159,13 +159,13 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
     m = NameDataset()
     tokens = nltk.word_tokenize(query_string)                           # Tokenizes the string using NLTK
     tokens = [x for x in tokens if x not in string.punctuation]         # Don't include punctuation
-    query_tokens = removeStopWords(tokens)                              # Remove the stopwords
+    query_tokens = remove_stopwords(tokens)                             # Remove the stopwords
 
     # Only includes words that are: 1.) In English 2.) Not in  words_to_remove 3.) Not a first name or last name
     query_tokens = [x for x in query_tokens if (wordnet.synsets(x) and x not in words_to_remove and
                                                 not m.search_first_name(x)) and not m.search_last_name(x)]
 
-    query_tokens = stemWords(query_tokens)                              # Stem words for preprocessing
+    query_tokens = stem_words(query_tokens)                             # Stem words for preprocessing
 
     for i in range(0, len(query_tokens)):                               # Converts all tokens to lowercase
         query_tokens[i] = query_tokens[i].lower()
@@ -205,7 +205,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
 
 '''
     Uses the query data and collaborative filtering to retrieve movies with at least one matching query term
-    and calls calculateCosineSimilarity
+    and calls calculate_cosine_similarity()
     
     Args:
         query_appearances(dict)
@@ -216,7 +216,7 @@ def calculateQueryDataTFIDF(query_string, inverted_index, num_files, profile):
         upvoting_factor(float): 1.05 (default)
         downvoting_factor(float): 0.95 (default)
 '''
-def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights, query_length,
+def calculate_document_similarity(query_appearances, inverted_index, query_weights, query_length,
                                 doc_term_weightings, upvoting_factor=1.05, downvoting_factor=0.95):
 
     docs_with_at_least_one_matching_query_term = set()
@@ -251,8 +251,8 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
     # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
     # If collaborative filtering is applicable, upvote or downvote the resulting cosine similarity score accordingly
     for movieID in docs_with_at_least_one_matching_query_term:
-        docs_with_scores[movieID] = calculateCosineSimilarity(doc_term_weightings[movieID].weights, query_weights,
-                                                             doc_term_weightings[movieID].doc_length, query_length)
+        docs_with_scores[movieID] = calculate_cosine_similarity()(doc_term_weightings[movieID].weights, query_weights,
+                                                                  doc_term_weightings[movieID].doc_length, query_length)
         if movieID in relevant_movie_ids:
             docs_with_scores[movieID] *= upvoting_factor
 
@@ -264,7 +264,7 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
 
 '''
     Preprocesses the relevant movie data (script, synopsis) using tokenization, stopword removal, and stemming
-    and then sends the list of tokens to createInvertedIndex()
+    and then sends the list of tokens to create_inverted_index()
     
     Args:
         document(list of str)
@@ -274,20 +274,20 @@ def calculateDocumentSimilarity(query_appearances, inverted_index, query_weights
     Return:
         None
 '''
-def indexDocument(document, inverted_index, movieID):
+def index_document(document, inverted_index, movieID):
     tokens = nltk.word_tokenize(document)                               # Tokenize the script/synopsis
     tokens = [x for x in tokens if x not in string.punctuation]
-    tokens = removeStopWords(tokens)                                    # Remove the stopwords
-    tokens = stemWords(tokens)                                          # Stem words
+    tokens = remove_stopwords(tokens)                                   # Remove the stopwords
+    tokens = stem_words(tokens)                                         # Stem words
 
     for i in range(0, len(tokens)):
         tokens[i] = tokens[i].lower()                                   # Makes all words lowercase
 
-    createInvertedIndex(inverted_index, movieID, tokens)                # Create the inverted index
+    create_inverted_index(inverted_index, movieID, tokens)              # Create the inverted index
 
 
 '''
-    Retrieves previously created query TF-IDF vector or creates a new one and then calls calculateDocumentSimilarity()
+    Retrieves previously created query TF-IDF vector or creates a new one and then calls calculate_document_similarity()
     
     Args:
         profile(str)
@@ -299,7 +299,7 @@ def indexDocument(document, inverted_index, movieID):
         dict
 '''
 
-def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
+def retrieve_documents(profile, query, inverted_index, doc_term_weightings):
     query_weights = list()
     query_appearances = collections.Counter()
     query_length = 0.0
@@ -309,7 +309,7 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
         os.path.exists("data/"+profile+"/query_weights.pickle"):
         query_appearances = collections.Counter()
         num_files = len(doc_term_weightings) + 0.0
-        (query_weights, query_length, query_appearances) = calculateQueryDataTFIDF(query, inverted_index,
+        (query_weights, query_length, query_appearances) = calculate_query_TFIDF(query, inverted_index,
                                                                                    num_files, profile)
 
     # The query vector for this profile was previously computed
@@ -325,7 +325,7 @@ def retrieveDocuments(profile, query, inverted_index, doc_term_weightings):
         query_length = math.sqrt(query_length)
 
     # After calculating query weights and length, returns ranked list of documents by calculating similarity
-    return calculateDocumentSimilarity(query_appearances, inverted_index,
+    return calculate_document_similarity(query_appearances, inverted_index,
                                        query_weights, query_length, doc_term_weightings)
 
 
@@ -506,13 +506,13 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
                 print(str(movie_num) + " " + movie_title + " NOT FOUND")        # If movie synopsis not found
 
         movie_num += 1
-        indexDocument(script, inverted_index, movieID)                          # Update the inverted index
+        index_document(script, inverted_index, movieID)                          # Update the inverted index
         file.close()
         num_files += 1
         current_index = current_index + 1
 
     # Once inverted index is complete, compute document weights using the appropriate weighting scheme
-    computeDocWeightsTFIDF(inverted_index, num_files, doc_term_weightings)
+    compute_doc_weights_TFIDF(inverted_index, num_files, doc_term_weightings)
 
     # Write all info to pickle files to avoid having to recompute every time
     pickle_out1 = open("inverted_index.pickle", "wb")
@@ -563,7 +563,7 @@ def generate_recommendations(profile, create_new_pickle_files=False):
     print("Searching for your recommended movies...\n")
 
     # Retrieves a ranking of all movies in the database with cosine similarity scores
-    docs_with_scores = retrieveDocuments(profile, query, inverted_index, doc_term_weightings)
+    docs_with_scores = retrieve_documents(profile, query, inverted_index, doc_term_weightings)
 
     # Sorts the retrieved list of movies by cosine similarity
     recs = sorted(docs_with_scores.items(), key=lambda x: x[1], reverse=True)[:10]  # Order the list

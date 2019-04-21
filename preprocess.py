@@ -18,10 +18,10 @@ stopwords = ['a', 'all', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been',
              'this', 'to', 'us', 'was', 'what', 'when', 'where', 'which', 'who', 'why',
              'will', 'with', 'you', 'your']
 
-
+'''
 This function removes the stopwords according to the stopwords list provided from Assignment 1
 '''
-def removeStopWords(list_of_tokens):
+def remove_stopwords(list_of_tokens):
     number_of_tokens = len(list_of_tokens)
     token_index = 0
 
@@ -39,7 +39,7 @@ def removeStopWords(list_of_tokens):
 '''
 Performs stemming of words using the PorterStemmer class code
 '''
-def stemWords(list_of_tokens):
+def stem_words(list_of_tokens):
     stemmer = PorterStemmer()   # Declares the stemmer object
     for token_index, token in enumerate(list_of_tokens):
         list_of_tokens[token_index] = stemmer.stem(token, 0, len(token) - 1)    # Stems the word using the function
