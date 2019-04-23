@@ -557,7 +557,6 @@ def generate_recommendations(profile, create_new_pickle_files=False):
         index_to_movies = pickle.load(pickle_in)
         pickle_in = open("synopsis_image_info.pickle", "rb")
         synopsis = pickle.load(pickle_in)
-        print(len(doc_term_weightings))
 
     query = open("data/"+profile+"/posts.txt").read()                               # Open the social media text file
     t0 = time.time()                                                                # Keeps track of computation time
