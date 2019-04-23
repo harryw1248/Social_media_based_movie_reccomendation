@@ -251,7 +251,7 @@ def calculate_document_similarity(query_appearances, inverted_index, query_weigh
     # For each movieID in the set, calculate the cosine similarity and store in a map of movieID to similarity value
     # If collaborative filtering is applicable, upvote or downvote the resulting cosine similarity score accordingly
     for movieID in docs_with_at_least_one_matching_query_term:
-        docs_with_scores[movieID] = calculate_cosine_similarity()(doc_term_weightings[movieID].weights, query_weights,
+        docs_with_scores[movieID] = calculate_cosine_similarity(doc_term_weightings[movieID].weights, query_weights,
                                                                   doc_term_weightings[movieID].doc_length, query_length)
         if movieID in relevant_movie_ids:
             docs_with_scores[movieID] *= upvoting_factor
@@ -557,6 +557,7 @@ def generate_recommendations(profile, create_new_pickle_files=False):
         index_to_movies = pickle.load(pickle_in)
         pickle_in = open("synopsis_image_info.pickle", "rb")
         synopsis = pickle.load(pickle_in)
+        print(len(doc_term_weightings))
 
     query = open("data/"+profile+"/posts.txt").read()                               # Open the social media text file
     t0 = time.time()                                                                # Keeps track of computation time
