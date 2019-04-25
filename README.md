@@ -14,7 +14,7 @@ https://drive.google.com/open?id=1oY1ObZNDpravOaSeeP-OIHsAS96xkBf7
 
 ## How to run:
 
-(Steps 1 and 2 are necessary to run scraper)
+(Steps 1 - 5 are necessary to run scraper)
 1. Install `chromedriver` from https://sites.google.com/a/chromium.org/chromedriver/
 2. Move chromedriver to root directory of project
 3. Unzip the Kaggle datset and the pickle files and put all those files in the root directory (doc_term_weightings.pickle, inverted_index.pickle, etc. must be in the root directory if you are not recreating the pickle data)
