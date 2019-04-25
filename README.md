@@ -17,7 +17,7 @@ https://drive.google.com/open?id=1oY1ObZNDpravOaSeeP-OIHsAS96xkBf7
 (Steps 1 - 5 are necessary to run scraper)
 1. Install `chromedriver` from https://sites.google.com/a/chromium.org/chromedriver/
 2. Move chromedriver to root directory of project
-3. Unzip the Kaggle datset and the pickle files and put all those files in the root directory (doc_term_weightings.pickle, inverted_index.pickle, etc. must be in the root directory if you are not recreating the pickle data)
+3. Unzip the Kaggle data (kaggle_dataset.zip), the pickle files (pickle_files.zip), and the movie scripts (movies.zip) folder and put all those files in the root directory (doc_term_weightings.pickle, inverted_index.pickle, etc. must be in the root directory if you are not recreating the pickle data)
 4. Make sure there is a folder entitled "data" in the root directory; it does not matter whether it's empty
 5. Load the webapp: `python3 app.py [chromedriver path]`. This will load the flask app on localhost. Navigate to the path specified in the terminal.
       Ex: "python3 app.py Users/Vinchenzo4335/Documents/EECS_486_final_project-master/chromedriver"
