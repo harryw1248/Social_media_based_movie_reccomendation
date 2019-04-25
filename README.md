@@ -33,7 +33,6 @@ https://drive.google.com/open?id=1oY1ObZNDpravOaSeeP-OIHsAS96xkBf7
 
 ## Repo Tree
 ```
-├── PorterStemmer.py
 ├── README.md
 ├── app.py -> Driver, calls scraping and cosine similarity functions
 ├── chromedriver
