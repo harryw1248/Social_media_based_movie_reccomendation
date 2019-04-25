@@ -76,7 +76,7 @@ def recommendations():
     global weightings, query, inverted_index, index_to_movies, synopsis
     profile = session['profile']
     if profile is None: return redirect(url_for('homepage'))
-    movies = recommender.generate_recommendations(profile)
+    movies = recommender.generate_recommendations(profile, True)
     return render_template('recommendations.html', user=profile, stories=movies)
 
 if __name__ == '__main__':

@@ -435,7 +435,7 @@ def create_data(inverted_index, num_files, synopsis_image_info, index_to_movies,
     pickle_tags = open("movie_attributes.pickle", "rb")
     movie_attributes = pickle.load(pickle_tags)
 
-    doc_folder = ""
+    doc_folder = "Movies/"
     current_index = 0
 
     for filename in os.listdir(os.getcwd() + "/" + doc_folder):  # Iterates through each doc in passed-in folder
